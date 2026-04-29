@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/m/CudaRuntime1/.vs/CudaRuntime1
+/m/CudaRuntime1/x64/Debug
