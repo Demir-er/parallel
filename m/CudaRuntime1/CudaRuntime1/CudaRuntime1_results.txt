@@ -1,0 +1,124 @@
+----- Run at 2026-05-01 22:13:10 -----
+2026-05-01 22:13:10 INFO: Reading CSV files...
+2026-05-01 22:13:10 INFO: Rows read: Aselsan=503, THY=503
+2026-05-01 22:13:10 INFO: Aligned rows: 503
+2026-05-01 22:13:10 INFO: 
+--- ALIGNED CSV DATA SAMPLE ---
+2026-05-01 22:13:10 INFO: Aselsan - First rows:
+2026-05-01 22:13:10 INFO: 29.04.2024 18:10:00 Aselsan Close Price: 62.05
+2026-05-01 22:13:10 INFO: 30.04.2024 18:10:00 Aselsan Close Price: 60.75
+2026-05-01 22:13:10 INFO: 02.05.2024 18:10:00 Aselsan Close Price: 62.1
+2026-05-01 22:13:10 INFO: 03.05.2024 18:10:00 Aselsan Close Price: 62.2
+2026-05-01 22:13:10 INFO: 06.05.2024 18:10:00 Aselsan Close Price: 62.4
+2026-05-01 22:13:10 INFO: Aselsan - Last rows:
+2026-05-01 22:13:10 INFO: 22.04.2026 18:10:00 Aselsan Close Price: 396.5
+2026-05-01 22:13:10 INFO: 24.04.2026 18:10:00 Aselsan Close Price: 392
+2026-05-01 22:13:10 INFO: 27.04.2026 18:10:00 Aselsan Close Price: 415
+2026-05-01 22:13:10 INFO: 28.04.2026 18:10:00 Aselsan Close Price: 414.5
+2026-05-01 22:13:10 INFO: 29.04.2026 18:10:00 Aselsan Close Price: 425.5
+2026-05-01 22:13:10 INFO: THY - First rows:
+2026-05-01 22:13:10 INFO: 29.04.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:10 INFO: 30.04.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:10 INFO: 02.05.2024 18:10:00 THY Close Price: 325.25
+2026-05-01 22:13:10 INFO: 03.05.2024 18:10:00 THY Close Price: 325
+2026-05-01 22:13:10 INFO: 06.05.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:10 INFO: THY - Last rows:
+2026-05-01 22:13:10 INFO: 22.04.2026 18:10:00 THY Close Price: 323.5
+2026-05-01 22:13:10 INFO: 24.04.2026 18:10:00 THY Close Price: 325
+2026-05-01 22:13:10 INFO: 27.04.2026 18:10:00 THY Close Price: 320.5
+2026-05-01 22:13:10 INFO: 28.04.2026 18:10:00 THY Close Price: 315.75
+2026-05-01 22:13:10 INFO: 29.04.2026 18:10:00 THY Close Price: 314.5
+2026-05-01 22:13:10 INFO: 
+Computed sample covariance matrix (from returns):
+2026-05-01 22:13:10 INFO: [ 0.000701111  0.000125119 ]
+2026-05-01 22:13:10 INFO: [ 0.000125119  0.00037106 ]
+2026-05-01 22:13:10 INFO: 
+Cholesky L (lower-triangular):
+2026-05-01 22:13:10 INFO: 0.0264785  0
+2026-05-01 22:13:10 INFO: 0.00472529  0.0186744
+2026-05-01 22:13:10 INFO: 
+Generating samples on CPU (N=20000)...
+2026-05-01 22:13:10 INFO: CPU generation time: 10.543 ms (1.89699e+06 samples/sec)
+2026-05-01 22:13:10 INFO: 
+Verification from generated samples (20000):
+2026-05-01 22:13:10 INFO: Sample means: [0.00392635, -0.000114142]
+2026-05-01 22:13:10 INFO: Sample covariance:
+2026-05-01 22:13:10 INFO: [ 0.000706813  0.000130017 ]
+2026-05-01 22:13:10 INFO: [ 0.000130017  0.000370934 ]
+2026-05-01 22:13:10 INFO: 
+Original estimated covariance vs sample covariance difference (orig - sample):
+2026-05-01 22:13:10 INFO: [ -5.7015e-06  -4.89887e-06 ]
+2026-05-01 22:13:10 INFO: [ -4.89887e-06  1.25961e-07 ]
+2026-05-01 22:13:10 INFO: 
+Ready for GPU Simulation. Allocating Device Memory and copying parameters...
+2026-05-01 22:13:11 INFO: GPU alloc+copy time (measured by events): 0.741568 ms
+2026-05-01 22:13:11 INFO: Data successfully copied to GPU!
+2026-05-01 22:13:11 INFO: 
+Summary:
+2026-05-01 22:13:11 INFO:  - Aligned rows used: 503
+2026-05-01 22:13:11 INFO:  - CPU sample generation time (ms): 10.543
+2026-05-01 22:13:11 INFO:  - GPU parameter upload time (ms): 0.741568
+----- End run -----
+
+----- Run at 2026-05-01 22:13:57 -----
+2026-05-01 22:13:57 INFO: Reading CSV files...
+2026-05-01 22:13:57 INFO: Rows read: Aselsan=503, THY=503
+2026-05-01 22:13:57 INFO: Aligned rows: 503
+2026-05-01 22:13:57 INFO: 
+--- ALIGNED CSV DATA SAMPLE ---
+2026-05-01 22:13:57 INFO: Aselsan - First rows:
+2026-05-01 22:13:57 INFO: 29.04.2024 18:10:00 Aselsan Close Price: 62.05
+2026-05-01 22:13:57 INFO: 30.04.2024 18:10:00 Aselsan Close Price: 60.75
+2026-05-01 22:13:57 INFO: 02.05.2024 18:10:00 Aselsan Close Price: 62.1
+2026-05-01 22:13:57 INFO: 03.05.2024 18:10:00 Aselsan Close Price: 62.2
+2026-05-01 22:13:57 INFO: 06.05.2024 18:10:00 Aselsan Close Price: 62.4
+2026-05-01 22:13:57 INFO: Aselsan - Last rows:
+2026-05-01 22:13:57 INFO: 22.04.2026 18:10:00 Aselsan Close Price: 396.5
+2026-05-01 22:13:57 INFO: 24.04.2026 18:10:00 Aselsan Close Price: 392
+2026-05-01 22:13:57 INFO: 27.04.2026 18:10:00 Aselsan Close Price: 415
+2026-05-01 22:13:57 INFO: 28.04.2026 18:10:00 Aselsan Close Price: 414.5
+2026-05-01 22:13:57 INFO: 29.04.2026 18:10:00 Aselsan Close Price: 425.5
+2026-05-01 22:13:57 INFO: THY - First rows:
+2026-05-01 22:13:57 INFO: 29.04.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:57 INFO: 30.04.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:57 INFO: 02.05.2024 18:10:00 THY Close Price: 325.25
+2026-05-01 22:13:57 INFO: 03.05.2024 18:10:00 THY Close Price: 325
+2026-05-01 22:13:57 INFO: 06.05.2024 18:10:00 THY Close Price: 326
+2026-05-01 22:13:57 INFO: THY - Last rows:
+2026-05-01 22:13:57 INFO: 22.04.2026 18:10:00 THY Close Price: 323.5
+2026-05-01 22:13:57 INFO: 24.04.2026 18:10:00 THY Close Price: 325
+2026-05-01 22:13:57 INFO: 27.04.2026 18:10:00 THY Close Price: 320.5
+2026-05-01 22:13:57 INFO: 28.04.2026 18:10:00 THY Close Price: 315.75
+2026-05-01 22:13:57 INFO: 29.04.2026 18:10:00 THY Close Price: 314.5
+2026-05-01 22:13:57 INFO: 
+Computed sample covariance matrix (from returns):
+2026-05-01 22:13:57 INFO: [ 0.000701111  0.000125119 ]
+2026-05-01 22:13:57 INFO: [ 0.000125119  0.00037106 ]
+2026-05-01 22:13:57 INFO: 
+Cholesky L (lower-triangular):
+2026-05-01 22:13:57 INFO: 0.0264785  0
+2026-05-01 22:13:57 INFO: 0.00472529  0.0186744
+2026-05-01 22:13:57 INFO: 
+Generating samples on CPU (N=20000)...
+2026-05-01 22:13:57 INFO: CPU generation time: 7.3929 ms (2.7053e+06 samples/sec)
+2026-05-01 22:13:57 INFO: 
+Verification from generated samples (20000):
+2026-05-01 22:13:57 INFO: Sample means: [0.00423818, 0.000131892]
+2026-05-01 22:13:57 INFO: Sample covariance:
+2026-05-01 22:13:57 INFO: [ 0.000701382  0.000126485 ]
+2026-05-01 22:13:57 INFO: [ 0.000126485  0.000370881 ]
+2026-05-01 22:13:57 INFO: 
+Original estimated covariance vs sample covariance difference (orig - sample):
+2026-05-01 22:13:57 INFO: [ -2.70782e-07  -1.36666e-06 ]
+2026-05-01 22:13:57 INFO: [ -1.36666e-06  1.79483e-07 ]
+2026-05-01 22:13:57 INFO: 
+Ready for GPU Simulation. Allocating Device Memory and copying parameters...
+2026-05-01 22:13:58 INFO: GPU alloc+copy time (measured by events): 0.411392 ms
+2026-05-01 22:13:58 INFO: Data successfully copied to GPU!
+2026-05-01 22:13:58 INFO: 
+Summary:
+2026-05-01 22:13:58 INFO:  - Aligned rows used: 503
+2026-05-01 22:13:58 INFO:  - CPU sample generation time (ms): 7.3929
+2026-05-01 22:13:58 INFO:  - GPU parameter upload time (ms): 0.411392
+----- End run -----
+
