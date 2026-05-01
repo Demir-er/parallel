@@ -1,8 +1,21 @@
-#ifndef SIMULATE_GPU_H
-#define SIMULATE_GPU_H
+#pragma once
+#include <cstddef>
+#include <cstdint>
 
-#include <curand_kernel.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void simulateReturnsGPU(int numPaths, float meanReturn, float stdDev, float* d_returns, curandState* d_states);
+bool simulateReturnsGPU(std::size_t N,
+                        const float mu[2],
+                        const float L[4],
+                        const float weights[2],
+                        std::uint64_t seed,
+                        float alpha,
+                        float* outVaR,
+                        float* outCVaR,
+                        float* outKernelMs);
 
+#ifdef __cplusplus
+}
 #endif

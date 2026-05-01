@@ -1,0 +1,44 @@
+.gitignore
+README.md
+m/CudaRuntime1/CudaRuntime1.sln
+m/CudaRuntime1/CudaRuntime1/CudaRuntime1.vcxproj
+m/CudaRuntime1/CudaRuntime1/CudaRuntime1.vcxproj.user
+m/CudaRuntime1/CudaRuntime1/CudaRuntime1_results.txt
+m/CudaRuntime1/CudaRuntime1/aselsan2year.csv
+m/CudaRuntime1/CudaRuntime1/calculate_cpu.cpp
+m/CudaRuntime1/CudaRuntime1/calculate_cpu.h
+m/CudaRuntime1/CudaRuntime1/calculate_gpu.cu
+m/CudaRuntime1/CudaRuntime1/calculate_gpu.h
+m/CudaRuntime1/CudaRuntime1/kernel.cu
+m/CudaRuntime1/CudaRuntime1/main.cpp
+m/CudaRuntime1/CudaRuntime1/output.cpp
+m/CudaRuntime1/CudaRuntime1/output.h
+m/CudaRuntime1/CudaRuntime1/results.txt
+m/CudaRuntime1/CudaRuntime1/simulate_cpu.cpp
+m/CudaRuntime1/CudaRuntime1/simulate_cpu.h
+m/CudaRuntime1/CudaRuntime1/simulate_gpu.cu
+m/CudaRuntime1/CudaRuntime1/simulate_gpu.h
+m/CudaRuntime1/CudaRuntime1/thy.csv
+m/CudaRuntime1/CudaRuntime1/x64/Debug/CudaRuntime1.Build.CppClean.log
+m/CudaRuntime1/CudaRuntime1/x64/Debug/CudaRuntime1.vcxproj.FileListAbsolute.txt
+m/CudaRuntime1/CudaRuntime1/x64/Debug/calculate_gpu.cu-2045775230.deps
+m/CudaRuntime1/CudaRuntime1/x64/Debug/calculate_gpu.cu.cache
+m/CudaRuntime1/CudaRuntime1/x64/Debug/calculate_gpu.cu.obj
+m/CudaRuntime1/CudaRuntime1/x64/Debug/calculate_gpu.cu545235964.deps
+m/CudaRuntime1/CudaRuntime1/x64/Debug/kernel.cu530771058.deps
+m/CudaRuntime1/CudaRuntime1/x64/Debug/simulate_gpu.cu-1765016572.deps
+m/CudaRuntime1/CudaRuntime1/x64/Debug/simulate_gpu.cu.cache
+m/CudaRuntime1/CudaRuntime1/x64/Debug/simulate_gpu.cu.obj
+m/CudaRuntime1/CudaRuntime1/x64/Debug/simulate_gpu.cu2049397138.deps
+m/ToText/calculate_cpu (2).txt
+m/ToText/calculate_cpu.txt
+m/ToText/calculate_gpu (2).txt
+m/ToText/calculate_gpu.txt
+m/ToText/main.txt
+m/ToText/output (2).txt
+m/ToText/output.txt
+m/ToText/results.txt
+m/ToText/simulate_cpu (2).txt
+m/ToText/simulate_cpu.txt
+m/ToText/simulate_gpu (2).txt
+m/ToText/simulate_gpu.txt

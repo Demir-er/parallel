@@ -1,6 +1,6 @@
 // File: CudaRuntime1/main.cpp
 // Upgraded: full-CSV parser (prefers Adj Close), log-returns, logger, alignment, CPU sampling,
-// GPU upload scaffolding. Targets C++17.
+// GPU Monte-Carlo VaR integration. Targets C++17.
 
 #include <iostream>
 #include <array>
@@ -17,9 +17,8 @@
 #include <unordered_map>
 #include <mutex>
 
-#include <cuda_runtime.h> // for cudaMalloc/cudaMemcpy/cudaFree
+#include <cuda_runtime.h>
 
-// Keep existing project headers (unchanged)
 #include "simulate_cpu.h"
 #include "simulate_gpu.h"
 #include "calculate_cpu.h"
@@ -67,18 +66,13 @@ public:
     }
 
     template<typename... Args>
-    void info(Args&&... args) {
+    void infoLine(Args&&... args) {
         std::ostringstream oss;
         (oss << ... << std::forward<Args>(args));
         std::string s = oss.str();
         std::lock_guard<std::mutex> lk(mtx_);
-        std::cout << s;
-        if (fileOk_) file_ << nowTimestamp() << " INFO: " << s;
-    }
-
-    template<typename... Args>
-    void infoLine(Args&&... args) {
-        info(std::forward<Args>(args)..., "\n");
+        std::cout << s << "\n";
+        if (fileOk_) file_ << nowTimestamp() << " INFO: " << s << "\n";
     }
 
     template<typename... Args>
@@ -270,7 +264,7 @@ void alignByDateRows(const std::vector<CsvRow>& A, bool A_hasAdj,
 }
 
 // -----------------------------
-// Returns: log-returns prefered
+// Returns: log-returns preferred
 // -----------------------------
 std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
     std::vector<float> returns;
@@ -289,7 +283,7 @@ std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
 }
 
 // -----------------------------
-// Mean, covariance, cholesky, sampling, stats (same logic as before)
+// Statistical helpers (mean, covariance, cholesky, sampling, stats)
 // -----------------------------
 float calculateMean(const std::vector<float>& returns) {
     if (returns.empty()) return 0.0f;
@@ -344,11 +338,14 @@ bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter =
     return true;
 }
 
-bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4], std::vector<std::array<float,2>>& outSamples) {
+bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4], std::vector<std::array<float,2>>& outSamples, uint64_t seed = 0) {
     outSamples.clear();
     outSamples.reserve(N);
 
-    std::mt19937_64 rng((unsigned)std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::mt19937_64 rng;
+    if (seed) rng.seed(static_cast<unsigned long long>(seed));
+    else rng.seed((unsigned long long)std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
     std::normal_distribution<float> nd(0.0f, 1.0f);
 
     for (size_t i = 0; i < N; ++i) {
@@ -392,136 +389,99 @@ void computeSampleStats(const std::vector<std::array<float,2>>& samples,
 // -----------------------------
 // MAIN
 // -----------------------------
-int main() {
+int main(int argc, char** argv) {
     Logger logger("CudaRuntime1_results.txt");
 
-    // Read full CSV rows for both files
+    // CLI defaults
+    size_t Ngpu = 2 * 1000 * 1000;
+    double alpha = 0.95;
+    uint64_t seed = 0; // 0 = time-based
+    float w0 = 1.0f, w1 = 1.0f;
+
+    // Simple CLI parsing (order: Ngpu alpha seed w0 w1)
+    if (argc >= 2) Ngpu = static_cast<size_t>(std::stoull(argv[1]));
+    if (argc >= 3) alpha = std::stod(argv[2]);
+    if (argc >= 4) seed = static_cast<uint64_t>(std::stoull(argv[3]));
+    if (argc >= 6) { w0 = std::stof(argv[4]); w1 = std::stof(argv[5]); }
+
+    logger.infoLine("CLI: Ngpu=", Ngpu, " alpha=", alpha, " seed=", seed, " weights=[", w0, ",", w1, "]");
+
+    // Read CSVs (reuse your readCsvFull)
     std::vector<CsvRow> rowsA, rowsB;
-    bool aHasAdj = false, bHasAdj = false;
+    bool aHasAdj=false, bHasAdj=false;
     if (!readCsvFull("aselsan2year.csv", rowsA, aHasAdj)) {
-        logger.errorLine("Failed to read aselsan2year.csv or file empty.");
-        return -1;
+        logger.errorLine("Failed to read aselsan2year.csv"); return -1;
     }
     if (!readCsvFull("thy.csv", rowsB, bHasAdj)) {
-        logger.errorLine("Failed to read thy.csv or file empty.");
-        return -1;
+        logger.errorLine("Failed to read thy.csv"); return -1;
     }
-    logger.infoLine("Read rows: Aselsan=", rowsA.size(), " (AdjClose:", (aHasAdj ? "yes" : "no"), ")",
-                    ", THY=", rowsB.size(), " (AdjClose:", (bHasAdj ? "yes" : "no"), ")");
+    logger.infoLine("Read rows: Aselsan=", rowsA.size(), " THY=", rowsB.size());
 
-    // Align by date and produce price series (prefer Adj Close)
+    // Align and get prices vectors
     std::vector<float> aPricesAligned, tPricesAligned;
     std::vector<std::string> alignedDates;
     alignByDateRows(rowsA, aHasAdj, rowsB, bHasAdj, aPricesAligned, tPricesAligned, alignedDates);
     logger.infoLine("Aligned rows: ", alignedDates.size());
-    if (alignedDates.size() < 2) {
-        logger.errorLine("Not enough aligned rows to compute returns.");
-        return -1;
-    }
+    if (alignedDates.size() < 2) { logger.errorLine("Not enough aligned rows"); return -1; }
 
-    // Print samples
-    const size_t printN = 5;
-    logger.infoLine("\nAselsan sample (first/last):");
-    for (size_t i = 0; i < printN && i < aPricesAligned.size(); ++i)
-        logger.infoLine(alignedDates[i], " ", aPricesAligned[i]);
-    size_t startA = (aPricesAligned.size() > printN) ? (aPricesAligned.size() - printN) : 0;
-    for (size_t i = startA; i < aPricesAligned.size(); ++i)
-        logger.infoLine(alignedDates[i], " ", aPricesAligned[i]);
+    // compute log returns
+    auto returnsA = calculateLogReturns(aPricesAligned);
+    auto returnsB = calculateLogReturns(tPricesAligned);
+    if (returnsA.empty() || returnsB.empty()) { logger.errorLine("No returns"); return -1; }
 
-    logger.infoLine("\nTHY sample (first/last):");
-    for (size_t i = 0; i < printN && i < tPricesAligned.size(); ++i)
-        logger.infoLine(alignedDates[i], " ", tPricesAligned[i]);
-    size_t startT = (tPricesAligned.size() > printN) ? (tPricesAligned.size() - printN) : 0;
-    for (size_t i = startT; i < tPricesAligned.size(); ++i)
-        logger.infoLine(alignedDates[i], " ", tPricesAligned[i]);
+    float meanA = calculateMean(returnsA);
+    float meanB = calculateMean(returnsB);
+    float cov00 = calculateCovariance(returnsA, returnsA, meanA, meanA);
+    float cov01 = calculateCovariance(returnsA, returnsB, meanA, meanB);
+    float cov11 = calculateCovariance(returnsB, returnsB, meanB, meanB);
 
-    // Compute log-returns
-    auto aselsanReturns = calculateLogReturns(aPricesAligned);
-    auto thyReturns = calculateLogReturns(tPricesAligned);
+    logger.infoLine("Cov matrix: [", cov00, " ", cov01, "] [", cov01, " ", cov11, "]");
 
-    if (aselsanReturns.empty() || thyReturns.empty()) {
-        logger.errorLine("Not enough valid price points to compute returns after filtering invalid prices.");
-        return -1;
-    }
-
-    float meanAselsan = calculateMean(aselsanReturns);
-    float meanThy = calculateMean(thyReturns);
-    float cov00 = calculateCovariance(aselsanReturns, aselsanReturns, meanAselsan, meanAselsan);
-    float cov01 = calculateCovariance(aselsanReturns, thyReturns, meanAselsan, meanThy);
-    float cov11 = calculateCovariance(thyReturns, thyReturns, meanThy, meanThy);
-
-    logger.infoLine("\nComputed sample covariance matrix (from log-returns):");
-    logger.infoLine("[ ", cov00, "  ", cov01, " ]");
-    logger.infoLine("[ ", cov01, "  ", cov11, " ]");
-
-    // Cholesky
     float L[4] = {0,0,0,0};
-    if (!cholesky2x2(cov00, cov01, cov11, L)) {
-        logger.errorLine("Cholesky failed. Consider regularization or check data.");
-        return -1;
-    }
-    logger.infoLine("\nCholesky L:");
-    logger.infoLine(L[0], "  0");
-    logger.infoLine(L[2], "  ", L[3]);
+    if (!cholesky2x2(cov00, cov01, cov11, L)) { logger.errorLine("Cholesky failed"); return -1; }
+    logger.infoLine("Cholesky L: ", L[0], ", ", L[2], ", ", L[3]);
 
-    // CPU sampling verification
-    float mu[2] = { meanAselsan, meanThy };
-    constexpr size_t Nsamples = 20000;
+    // CPU sampling (reproducible if seed provided)
+    float mu[2] = { meanA, meanB };
+    constexpr size_t Ncpu = 20000;
     std::vector<std::array<float,2>> samples;
-    logger.infoLine("\nGenerating ", Nsamples, " correlated samples on CPU...");
-    auto tStartCPU = std::chrono::high_resolution_clock::now();
-    generateCorrelatedSamplesCPU(Nsamples, mu, L, samples);
-    auto tEndCPU = std::chrono::high_resolution_clock::now();
-    double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(tEndCPU - tStartCPU).count();
-    logger.infoLine("CPU generation time: ", cpuMs, " ms (", (Nsamples / (cpuMs/1000.0)), " samples/sec)");
+    logger.infoLine("Generating CPU samples (N=", Ncpu, ") seed=", seed);
+    auto t0 = std::chrono::high_resolution_clock::now();
+    generateCorrelatedSamplesCPU(Ncpu, mu, L, samples, seed);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t1 - t0).count();
+    logger.infoLine("CPU generation time (ms): ", cpuMs);
 
-    float sMean0, sMean1, sCov00, sCov01, sCov11;
-    computeSampleStats(samples, sMean0, sMean1, sCov00, sCov01, sCov11);
+    // CPU portfolio P/L vector
+    std::vector<float> cpuPL;
+    cpuPL.reserve(samples.size());
+    for (const auto &s : samples) cpuPL.push_back(w0 * s[0] + w1 * s[1]);
 
-        logger.infoLine("\nSample means: [", sMean0, ", ", sMean1, "]");
-    logger.infoLine("Sample covariance:\n[ ", sCov00, "  ", sCov01, " ]\n[ ", sCov01, "  ", sCov11, " ]");
+    float cpuVaR = calculateVaR(cpuPL, static_cast<float>(alpha));
+    float cpuCVaR = calculateCVaR(cpuPL, static_cast<float>(alpha));
+    logger.infoLine("CPU VaR=", cpuVaR, " CVaR=", cpuCVaR);
 
-    logger.infoLine("\nCovariance difference (orig - sample):\n[ ", (cov00 - sCov00), "  ", (cov01 - sCov01), " ]\n[ ", (cov01 - sCov01), "  ", (cov11 - sCov11), " ]");
+    // GPU Monte Carlo VaR
+    logger.infoLine("Launching GPU Monte Carlo VaR: Ngpu=", Ngpu);
+    float gpuVaR = 0.0f, gpuCVaR = 0.0f, gpuMs = 0.0f;
+    float weights[2] = { w0, w1 };
+    bool ok = simulateReturnsGPU(Ngpu, mu, L, weights, seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &gpuMs);
+    if (!ok) {
+        logger.errorLine("GPU simulation failed");
+    } else {
+        logger.infoLine("GPU kernel+select time (ms) = ", gpuMs);
+        logger.infoLine("GPU VaR=", gpuVaR, " GPU CVaR=", gpuCVaR);
+    }
 
-    // GPU scaffold: upload mu and L
-    logger.infoLine("\nUploading mu & L to GPU (scaffolding)...");
-    float* d_mu = nullptr;
-    float* d_L = nullptr;
-    cudaEvent_t startEvent, stopEvent;
-    cudaEventCreate(&startEvent);
-    cudaEventCreate(&stopEvent);
-    cudaEventRecord(startEvent, 0);
+    // Compare CPU vs GPU (relative diff)
+    if (ok) {
+        auto rel = [](double a, double b)->double {
+            if (b == 0.0) return std::abs(a - b);
+            return std::abs((a - b) / b);
+        };
+        logger.infoLine("Comparison CPU vs GPU: VaR rel diff=", rel(cpuVaR, gpuVaR), " CVaR rel diff=", rel(cpuCVaR, gpuCVaR));
+    }
 
-    cudaError_t err = cudaMalloc((void**)&d_mu, 2 * sizeof(float));
-    if (!checkCuda(err, "cudaMalloc d_mu")) return -1;
-    err = cudaMalloc((void**)&d_L, 4 * sizeof(float));
-    if (!checkCuda(err, "cudaMalloc d_L")) { cudaFree(d_mu); return -1; }
-
-    err = cudaMemcpy(d_mu, mu, 2 * sizeof(float), cudaMemcpyHostToDevice);
-    if (!checkCuda(err, "cudaMemcpy d_mu")) { cudaFree(d_mu); cudaFree(d_L); return -1; }
-    err = cudaMemcpy(d_L, L, 4 * sizeof(float), cudaMemcpyHostToDevice);
-    if (!checkCuda(err, "cudaMemcpy d_L")) { cudaFree(d_mu); cudaFree(d_L); return -1; }
-
-    cudaEventRecord(stopEvent, 0);
-    cudaEventSynchronize(stopEvent);
-    float msUpload = 0.0f;
-    cudaEventElapsedTime(&msUpload, startEvent, stopEvent);
-    logger.infoLine("GPU alloc+copy time (ms): ", msUpload);
-
-    logger.infoLine("GPU parameters uploaded (no kernel launched).");
-
-    // cleanup GPU
-    cudaFree(d_mu);
-    cudaFree(d_L);
-    cudaEventDestroy(startEvent);
-    cudaEventDestroy(stopEvent);
-
-    logger.infoLine("\nSummary:");
-    logger.infoLine(" - Aligned rows used: ", alignedDates.size());
-    logger.infoLine(" - CPU sample generation time (ms): ", cpuMs);
-    logger.infoLine(" - GPU param upload time (ms): ", msUpload);
-
-    // If you want logs per run (timestamped), run the binary with redirection or keep the Logger file.
-
+    logger.infoLine("Summary: aligned rows=", alignedDates.size(), " CPU ms=", cpuMs, " GPU ms=", gpuMs);
     return 0;
 }

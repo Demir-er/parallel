@@ -4,5 +4,6 @@
 #include <vector>
 
 float calculateVaR(const std::vector<float>& returns, float confidenceLevel);
+float calculateCVaR(const std::vector<float>& values, float confidenceLevel);
 
 #endif 

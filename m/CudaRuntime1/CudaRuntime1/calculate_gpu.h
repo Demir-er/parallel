@@ -1,7 +1,9 @@
-#ifndef CALCULATE_GPU_H
-#define CALCULATE_GPU_H
+#ifndef CALCULATE_H
+#define CALCULATE_H
 
-// GPU calculateVaR
-float calculateVaRGPU(float* d_returns, int numPaths, float confidenceLevel);
+#include <vector>
+
+float calculateVaR(const std::vector<float>& returns, float confidenceLevel);
+float calculateCVaR(const std::vector<float>& returns, float confidenceLevel);
 
 #endif
