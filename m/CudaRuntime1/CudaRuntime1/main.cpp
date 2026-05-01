@@ -1,6 +1,6 @@
-// CudaRuntime1\main.cpp
-// Enhanced: Logger, date alignment, CPU/GPU timing scaffolding, and robust CUDA error checks.
-// Targets C++17.
+// File: CudaRuntime1/main.cpp
+// Upgraded: full-CSV parser (prefers Adj Close), log-returns, logger, alignment, CPU sampling,
+// GPU upload scaffolding. Targets C++17.
 
 #include <iostream>
 #include <array>
@@ -17,17 +17,18 @@
 #include <unordered_map>
 #include <mutex>
 
-#include <cuda_runtime.h> // CUDA runtime
+#include <cuda_runtime.h> // for cudaMalloc/cudaMemcpy/cudaFree
 
-// Include your project headers
+// Keep existing project headers (unchanged)
 #include "simulate_cpu.h"
 #include "simulate_gpu.h"
 #include "calculate_cpu.h"
 #include "calculate_gpu.h"
 #include "output.h"
 
-// Simple Logger that writes to both stdout and an append log file with timestamps.
-// Thread-safe for future extension.
+// -----------------------------
+// Simple Logger (console + append file)
+// -----------------------------
 class Logger {
     std::ofstream file_;
     std::mutex mtx_;
@@ -48,10 +49,9 @@ class Logger {
     }
 
 public:
-    Logger(const std::string& filename = "results.txt") {
+    explicit Logger(const std::string& filename = "CudaRuntime1_results.txt") {
         file_.open(filename, std::ios::app);
         fileOk_ = file_.good();
-        // Add run header
         std::ostringstream oss;
         oss << "----- Run at " << nowTimestamp() << " -----\n";
         if (fileOk_) file_ << oss.str();
@@ -92,7 +92,9 @@ public:
     }
 };
 
+// -----------------------------
 // CUDA error checking helper
+// -----------------------------
 inline bool checkCuda(cudaError_t err, const char* msg = "") {
     if (err != cudaSuccess) {
         std::cerr << "CUDA Error: " << msg << " : " << cudaGetErrorString(err) << std::endl;
@@ -101,85 +103,194 @@ inline bool checkCuda(cudaError_t err, const char* msg = "") {
     return true;
 }
 
-// Read Close prices and dates from CSV (handles quoted fields and comma decimals)
-bool readClosePrices(const std::string& filename,
-                     std::vector<float>& prices,
-                     std::vector<std::string>& dates)   
-{
-    prices.clear();
-    dates.clear();
+// -----------------------------
+// CSV Row struct & parser that detects Adj Close
+// -----------------------------
+struct CsvRow {
+    std::string date;
+    float open = 0.0f;
+    float high = 0.0f;
+    float low = 0.0f;
+    float close = 0.0f;
+    float adjClose = 0.0f;
+    long long volume = 0;
+    bool hasAdj = false; // indicates whether adjClose is valid for this row
+    bool valid = false;  // indicates row parsed successfully
+};
+
+// Trim helper
+static void trimInPlace(std::string &s) {
+    size_t a = s.find_first_not_of(" \t\r\n");
+    if (a == std::string::npos) { s.clear(); return; }
+    size_t b = s.find_last_not_of(" \t\r\n");
+    s = s.substr(a, b - a + 1);
+}
+
+// Parse CSV into vector<CsvRow>. Detect if header contains "Adj Close".
+// Returns true if at least one row parsed.
+bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool& headerHasAdj) {
+    outRows.clear();
+    headerHasAdj = false;
 
     std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
-        return false;
-    }
+    if (!file.is_open()) return false;
 
     std::string line;
-    // skip header
     if (!std::getline(file, line)) return false;
+    // parse header to find column indices
+    std::vector<std::string> headerFields;
+    {
+        std::string cur;
+        bool inQuotes = false;
+        for (char c : line) {
+            if (c == '"') { inQuotes = !inQuotes; continue; }
+            if (c == ',' && !inQuotes) { headerFields.push_back(cur); cur.clear(); }
+            else cur.push_back(c);
+        }
+        headerFields.push_back(cur);
+    }
+    // map header names (lowercase) to indices
+    std::unordered_map<std::string, int> idx;
+    for (size_t i = 0; i < headerFields.size(); ++i) {
+        std::string h = headerFields[i];
+        trimInPlace(h);
+        std::transform(h.begin(), h.end(), h.begin(), [](unsigned char c){ return std::tolower(c); });
+        idx[h] = static_cast<int>(i);
+    }
+    // Common names: "date", "open", "high", "low", "close", "adj close" or "adj_close" or "adjusted close", "volume"
+    auto findIndex = [&](const std::vector<std::string>& candidates)->int {
+        for (auto &c : candidates) {
+            auto it = idx.find(c);
+            if (it != idx.end()) return it->second;
+        }
+        return -1;
+    };
+    int dateIdx = findIndex({"date"});
+    int openIdx = findIndex({"open"});
+    int highIdx = findIndex({"high"});
+    int lowIdx = findIndex({"low"});
+    int closeIdx = findIndex({"close"});
+    int adjIdx = findIndex({"adj close", "adj_close", "adjusted close", "adjusted_close", "adjclose"});
+    int volumeIdx = findIndex({"volume", "vol"});
 
+    headerHasAdj = (adjIdx >= 0);
+
+    // parse remaining lines
     while (std::getline(file, line)) {
         std::vector<std::string> fields;
         std::string cur;
         bool inQuotes = false;
-
         for (char c : line) {
-            if (c == '"') {
-                inQuotes = !inQuotes;
-                continue;
-            }
-            if (c == ',' && !inQuotes) {
-                fields.push_back(cur);
-                cur.clear();
-            } else {
-                cur.push_back(c);
-            }
+            if (c == '"') { inQuotes = !inQuotes; continue; }
+            if (c == ',' && !inQuotes) { fields.push_back(cur); cur.clear(); }
+            else cur.push_back(c);
         }
         fields.push_back(cur);
 
-        // Expect header: Date,Open,High,Low,Close,Volume -> Close index = 4
-        if (fields.size() <= 4) continue;
+        CsvRow row;
+        if (dateIdx >= 0 && dateIdx < (int)fields.size()) {
+            row.date = fields[dateIdx];
+            trimInPlace(row.date);
+        } else {
+            continue; // cannot parse row without date
+        }
 
-        std::string dateStr = fields[0];
-        std::string closeStr = fields[4];
-
-        // trim helpers
-        auto trim = [](std::string &s) {
-            size_t a = s.find_first_not_of(" \t\r\n");
-            if (a == std::string::npos) { s.clear(); return; }
-            size_t b = s.find_last_not_of(" \t\r\n");
-            s = s.substr(a, b - a + 1);
+        auto parseFloat = [&](int idxField, float &outVal) -> bool {
+            if (idxField < 0 || idxField >= (int)fields.size()) return false;
+            std::string s = fields[idxField];
+            trimInPlace(s);
+            if (s.empty()) return false;
+            // Replace comma decimals with dot
+            std::replace(s.begin(), s.end(), ',', '.');
+            try {
+                outVal = std::stof(s);
+                return true;
+            } catch (...) {
+                return false;
+            }
         };
-        trim(dateStr);
-        trim(closeStr);
+        auto parseLong = [&](int idxField, long long &outVal) -> bool {
+            if (idxField < 0 || idxField >= (int)fields.size()) return false;
+            std::string s = fields[idxField];
+            trimInPlace(s);
+            if (s.empty()) return false;
+            try {
+                outVal = std::stoll(s);
+                return true;
+            } catch (...) {
+                return false;
+            }
+        };
 
-        // replace decimal comma with dot
-        std::replace(closeStr.begin(), closeStr.end(), ',', '.');
+        bool any = false;
+        if (parseFloat(openIdx, row.open)) any = true;
+        if (parseFloat(highIdx, row.high)) any = true;
+        if (parseFloat(lowIdx, row.low)) any = true;
+        if (parseFloat(closeIdx, row.close)) any = true;
+        if (parseFloat(adjIdx, row.adjClose)) { row.hasAdj = true; any = true; }
+        if (parseLong(volumeIdx, row.volume)) any = true;
 
-        try {
-            float val = std::stof(closeStr);
-            dates.push_back(dateStr);
-            prices.push_back(val);
-        } catch (const std::exception&) {
-            // skip malformed line
+        // Mark valid if we parsed at least date and a price (close or adj)
+        if (!row.date.empty() && (row.hasAdj || row.close != 0.0f || any)) {
+            row.valid = true;
+            outRows.push_back(row);
         }
     }
 
-    return !prices.empty();
+    return !outRows.empty();
 }
 
-// Calculate daily returns: (P_t - P_{t-1}) / P_{t-1}
-std::vector<float> calculateReturns(const std::vector<float>& prices) {
+// -----------------------------
+// Align two series by date (inner join). Preserves order of the first series.
+// For each pair pushes chosen price (adj if present else close).
+// -----------------------------
+void alignByDateRows(const std::vector<CsvRow>& A, bool A_hasAdj,
+                     const std::vector<CsvRow>& B, bool B_hasAdj,
+                     std::vector<float>& outA, std::vector<float>& outB, std::vector<std::string>& outDates) {
+    outA.clear();
+    outB.clear();
+    outDates.clear();
+    std::unordered_map<std::string, float> mapB;
+    mapB.reserve(B.size());
+    for (const auto &r : B) {
+        if (!r.valid) continue;
+        float price = (B_hasAdj && r.hasAdj) ? r.adjClose : r.close;
+        mapB[r.date] = price;
+    }
+    for (const auto &r : A) {
+        if (!r.valid) continue;
+        auto it = mapB.find(r.date);
+        if (it != mapB.end()) {
+            float priceA = (A_hasAdj && r.hasAdj) ? r.adjClose : r.close;
+            outA.push_back(priceA);
+            outB.push_back(it->second);
+            outDates.push_back(r.date);
+        }
+    }
+}
+
+// -----------------------------
+// Returns: log-returns prefered
+// -----------------------------
+std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
     std::vector<float> returns;
     if (prices.size() < 2) return returns;
+    returns.reserve(prices.size() - 1);
     for (size_t i = 1; i < prices.size(); ++i) {
-        returns.push_back((prices[i] - prices[i - 1]) / prices[i - 1]);
+        float p0 = prices[i - 1];
+        float p1 = prices[i];
+        if (p0 <= 0.0f || p1 <= 0.0f) {
+            // skip invalid / zero price points
+            continue;
+        }
+        returns.push_back(std::log(p1 / p0));
     }
     return returns;
 }
 
-// Mean of returns (guard empty)
+// -----------------------------
+// Mean, covariance, cholesky, sampling, stats (same logic as before)
+// -----------------------------
 float calculateMean(const std::vector<float>& returns) {
     if (returns.empty()) return 0.0f;
     float sum = 0.0f;
@@ -187,7 +298,6 @@ float calculateMean(const std::vector<float>& returns) {
     return sum / returns.size();
 }
 
-// Sample covariance (returnsA and returnsB must be same length; uses N-1)
 float calculateCovariance(const std::vector<float>& returnsA,
                           const std::vector<float>& returnsB,
                           float meanA, float meanB) {
@@ -200,11 +310,7 @@ float calculateCovariance(const std::vector<float>& returnsA,
     return cov / (static_cast<float>(n) - 1.0f);
 }
 
-// 2x2 Cholesky with jitter/diagnostics. L output arranged row-major lower-triangular:
-// L[0] = L00, L[1] = L01 (should be 0), L[2] = L10, L[3] = L11
-// Returns true if successful (possibly after jitter), false otherwise.
 bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter = 1e-10f) {
-    // Ensure diagonal non-negative
     if (cov00 <= 0.0f) {
         if (cov00 > -jitter) cov00 = 0.0f; else return false;
     }
@@ -212,9 +318,7 @@ bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter =
     L[1] = 0.0f;
 
     if (L[0] == 0.0f) {
-        // If L00 is zero, cov01 must be zero too for valid factorization
         if (std::fabs(cov01) > 1e-12f) {
-            // Try regularizing diagonal
             cov00 += jitter;
             L[0] = std::sqrt(cov00);
             if (L[0] == 0.0f) return false;
@@ -229,10 +333,8 @@ bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter =
 
     float tmp = cov11 - (L[2] * L[2]);
     if (tmp < 0.0f) {
-        // If tiny negative due to rounding, clamp to zero; otherwise try jitter
         if (tmp > -1e-8f) tmp = 0.0f;
         else {
-            // try adding jitter to cov11
             cov11 += jitter;
             tmp = cov11 - (L[2] * L[2]);
             if (tmp < 0.0f) return false;
@@ -242,8 +344,6 @@ bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter =
     return true;
 }
 
-// Generate N correlated samples on CPU using mu (2) and lower-triangular L (2x2)
-// Returns pair: generated samples (vector of pairs) and boolean success
 bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4], std::vector<std::array<float,2>>& outSamples) {
     outSamples.clear();
     outSamples.reserve(N);
@@ -254,7 +354,6 @@ bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4],
     for (size_t i = 0; i < N; ++i) {
         float z0 = nd(rng);
         float z1 = nd(rng);
-        // x = mu + L * z  (lower-triangular multiplication)
         float x0 = mu[0] + L[0] * z0;
         float x1 = mu[1] + L[2] * z0 + L[3] * z1;
         outSamples.push_back({x0, x1});
@@ -262,7 +361,6 @@ bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4],
     return true;
 }
 
-// Compute sample mean and covariance of generated samples
 void computeSampleStats(const std::vector<std::array<float,2>>& samples,
                         float& mean0, float& mean1,
                         float& cov00, float& cov01, float& cov11) {
@@ -291,90 +389,58 @@ void computeSampleStats(const std::vector<std::array<float,2>>& samples,
     cov11 /= denom;
 }
 
-// Align two series by date (inner join). Preserves order of the first series.
-void alignByDate(const std::vector<std::string>& datesA, const std::vector<float>& pricesA,
-                 const std::vector<std::string>& datesB, const std::vector<float>& pricesB,
-                 std::vector<float>& outA, std::vector<float>& outB, std::vector<std::string>& outDates) {
-    outA.clear();
-    outB.clear();
-    outDates.clear();
-    std::unordered_map<std::string, float> mapB;
-    mapB.reserve(datesB.size());
-    for (size_t i = 0; i < datesB.size(); ++i) {
-        mapB[datesB[i]] = pricesB[i];
-    }
-    for (size_t i = 0; i < datesA.size(); ++i) {
-        auto it = mapB.find(datesA[i]);
-        if (it != mapB.end()) {
-            outA.push_back(pricesA[i]);
-            outB.push_back(it->second);
-            outDates.push_back(datesA[i]);
-        }
-    }
-}
-
+// -----------------------------
+// MAIN
+// -----------------------------
 int main() {
     Logger logger("CudaRuntime1_results.txt");
 
-    // --- READ CSV DATA ---
-    std::vector<float> aselsanPrices;
-    std::vector<std::string> aselsanDates;
-    std::vector<float> thyPrices;
-    std::vector<std::string> thyDates;
-
-    logger.infoLine("Reading CSV files...");
-
-    if (!readClosePrices("aselsan2year.csv", aselsanPrices, aselsanDates)) {
-        logger.errorLine("Stopping: could not read aselsan2year.csv");
+    // Read full CSV rows for both files
+    std::vector<CsvRow> rowsA, rowsB;
+    bool aHasAdj = false, bHasAdj = false;
+    if (!readCsvFull("aselsan2year.csv", rowsA, aHasAdj)) {
+        logger.errorLine("Failed to read aselsan2year.csv or file empty.");
         return -1;
     }
-    if (!readClosePrices("thy.csv", thyPrices, thyDates)) {
-        logger.errorLine("Stopping: could not read thy.csv");
+    if (!readCsvFull("thy.csv", rowsB, bHasAdj)) {
+        logger.errorLine("Failed to read thy.csv or file empty.");
         return -1;
     }
+    logger.infoLine("Read rows: Aselsan=", rowsA.size(), " (AdjClose:", (aHasAdj ? "yes" : "no"), ")",
+                    ", THY=", rowsB.size(), " (AdjClose:", (bHasAdj ? "yes" : "no"), ")");
 
-    logger.infoLine("Rows read: Aselsan=", aselsanPrices.size(), ", THY=", thyPrices.size());
-
-    // --- ALIGN BY DATE ---
+    // Align by date and produce price series (prefer Adj Close)
     std::vector<float> aPricesAligned, tPricesAligned;
     std::vector<std::string> alignedDates;
-    alignByDate(aselsanDates, aselsanPrices, thyDates, thyPrices, aPricesAligned, tPricesAligned, alignedDates);
+    alignByDateRows(rowsA, aHasAdj, rowsB, bHasAdj, aPricesAligned, tPricesAligned, alignedDates);
     logger.infoLine("Aligned rows: ", alignedDates.size());
-
     if (alignedDates.size() < 2) {
-        logger.errorLine("Not enough aligned data to proceed.");
+        logger.errorLine("Not enough aligned rows to compute returns.");
         return -1;
     }
 
-    // Print first/last few rows (logged)
+    // Print samples
     const size_t printN = 5;
-    logger.infoLine("\n--- ALIGNED CSV DATA SAMPLE ---");
-    logger.infoLine("Aselsan - First rows:");
-    for (size_t i = 0; i < printN && i < aPricesAligned.size(); ++i) {
-        logger.infoLine(alignedDates[i], " Aselsan Close Price: ", aPricesAligned[i]);
-    }
-    logger.infoLine("Aselsan - Last rows:");
+    logger.infoLine("\nAselsan sample (first/last):");
+    for (size_t i = 0; i < printN && i < aPricesAligned.size(); ++i)
+        logger.infoLine(alignedDates[i], " ", aPricesAligned[i]);
     size_t startA = (aPricesAligned.size() > printN) ? (aPricesAligned.size() - printN) : 0;
-    for (size_t i = startA; i < aPricesAligned.size(); ++i) {
-        logger.infoLine(alignedDates[i], " Aselsan Close Price: ", aPricesAligned[i]);
-    }
+    for (size_t i = startA; i < aPricesAligned.size(); ++i)
+        logger.infoLine(alignedDates[i], " ", aPricesAligned[i]);
 
-    logger.infoLine("THY - First rows:");
-    for (size_t i = 0; i < printN && i < tPricesAligned.size(); ++i) {
-        logger.infoLine(alignedDates[i], " THY Close Price: ", tPricesAligned[i]);
-    }
-    logger.infoLine("THY - Last rows:");
+    logger.infoLine("\nTHY sample (first/last):");
+    for (size_t i = 0; i < printN && i < tPricesAligned.size(); ++i)
+        logger.infoLine(alignedDates[i], " ", tPricesAligned[i]);
     size_t startT = (tPricesAligned.size() > printN) ? (tPricesAligned.size() - printN) : 0;
-    for (size_t i = startT; i < tPricesAligned.size(); ++i) {
-        logger.infoLine(alignedDates[i], " THY Close Price: ", tPricesAligned[i]);
-    }
+    for (size_t i = startT; i < tPricesAligned.size(); ++i)
+        logger.infoLine(alignedDates[i], " ", tPricesAligned[i]);
 
-    // --- COMPUTE RETURNS & COVARIANCE ---
-    auto aselsanReturns = calculateReturns(aPricesAligned);
-    auto thyReturns = calculateReturns(tPricesAligned);
+    // Compute log-returns
+    auto aselsanReturns = calculateLogReturns(aPricesAligned);
+    auto thyReturns = calculateLogReturns(tPricesAligned);
 
     if (aselsanReturns.empty() || thyReturns.empty()) {
-        logger.errorLine("Not enough data to compute returns.");
+        logger.errorLine("Not enough valid price points to compute returns after filtering invalid prices.");
         return -1;
     }
 
@@ -384,96 +450,67 @@ int main() {
     float cov01 = calculateCovariance(aselsanReturns, thyReturns, meanAselsan, meanThy);
     float cov11 = calculateCovariance(thyReturns, thyReturns, meanThy, meanThy);
 
-    logger.infoLine("\nComputed sample covariance matrix (from returns):");
+    logger.infoLine("\nComputed sample covariance matrix (from log-returns):");
     logger.infoLine("[ ", cov00, "  ", cov01, " ]");
     logger.infoLine("[ ", cov01, "  ", cov11, " ]");
 
-    // --- CHOLESKY ---
+    // Cholesky
     float L[4] = {0,0,0,0};
-    bool ok = cholesky2x2(cov00, cov01, cov11, L);
-    if (!ok) {
-        logger.errorLine("Cholesky factorization failed for covariance matrix. Consider increasing regularization.");
+    if (!cholesky2x2(cov00, cov01, cov11, L)) {
+        logger.errorLine("Cholesky failed. Consider regularization or check data.");
         return -1;
     }
-    logger.infoLine("\nCholesky L (lower-triangular):");
+    logger.infoLine("\nCholesky L:");
     logger.infoLine(L[0], "  0");
     logger.infoLine(L[2], "  ", L[3]);
 
-    // --- CPU SAMPLING TO VERIFY L ---
+    // CPU sampling verification
     float mu[2] = { meanAselsan, meanThy };
     constexpr size_t Nsamples = 20000;
     std::vector<std::array<float,2>> samples;
-
-    logger.infoLine("\nGenerating samples on CPU (N=", Nsamples, ")...");
+    logger.infoLine("\nGenerating ", Nsamples, " correlated samples on CPU...");
     auto tStartCPU = std::chrono::high_resolution_clock::now();
     generateCorrelatedSamplesCPU(Nsamples, mu, L, samples);
     auto tEndCPU = std::chrono::high_resolution_clock::now();
-    auto cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(tEndCPU - tStartCPU).count();
-
+    double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(tEndCPU - tStartCPU).count();
     logger.infoLine("CPU generation time: ", cpuMs, " ms (", (Nsamples / (cpuMs/1000.0)), " samples/sec)");
 
     float sMean0, sMean1, sCov00, sCov01, sCov11;
     computeSampleStats(samples, sMean0, sMean1, sCov00, sCov01, sCov11);
 
-    logger.infoLine("\nVerification from generated samples (", Nsamples, "):");
-    logger.infoLine("Sample means: [", sMean0, ", ", sMean1, "]");
-    logger.infoLine("Sample covariance:");
-    logger.infoLine("[ ", sCov00, "  ", sCov01, " ]");
-    logger.infoLine("[ ", sCov01, "  ", sCov11, " ]");
+        logger.infoLine("\nSample means: [", sMean0, ", ", sMean1, "]");
+    logger.infoLine("Sample covariance:\n[ ", sCov00, "  ", sCov01, " ]\n[ ", sCov01, "  ", sCov11, " ]");
 
-    logger.infoLine("\nOriginal estimated covariance vs sample covariance difference (orig - sample):");
-    logger.infoLine("[ ", (cov00 - sCov00), "  ", (cov01 - sCov01), " ]");
-    logger.infoLine("[ ", (cov01 - sCov01), "  ", (cov11 - sCov11), " ]");
+    logger.infoLine("\nCovariance difference (orig - sample):\n[ ", (cov00 - sCov00), "  ", (cov01 - sCov01), " ]\n[ ", (cov01 - sCov01), "  ", (cov11 - sCov11), " ]");
 
-    // --- GPU PREP & TIMING (basic) ---
-    logger.infoLine("\nReady for GPU Simulation. Allocating Device Memory and copying parameters...");
-
-    float muHost[2] = { meanAselsan, meanThy };
+    // GPU scaffold: upload mu and L
+    logger.infoLine("\nUploading mu & L to GPU (scaffolding)...");
     float* d_mu = nullptr;
     float* d_L = nullptr;
-
-    cudaError_t err;
-
-    // Time allocation & copy using CUDA events
     cudaEvent_t startEvent, stopEvent;
     cudaEventCreate(&startEvent);
     cudaEventCreate(&stopEvent);
+    cudaEventRecord(startEvent, 0);
 
-    err = cudaEventRecord(startEvent, 0);
-    if (err != cudaSuccess) logger.errorLine("cudaEventRecord failed start: ", cudaGetErrorString(err));
-
-    err = cudaMalloc((void**)&d_mu, 2 * sizeof(float));
+    cudaError_t err = cudaMalloc((void**)&d_mu, 2 * sizeof(float));
     if (!checkCuda(err, "cudaMalloc d_mu")) return -1;
     err = cudaMalloc((void**)&d_L, 4 * sizeof(float));
-    if (!checkCuda(err, "cudaMalloc d_L")) {
-        cudaFree(d_mu);
-        return -1;
-    }
+    if (!checkCuda(err, "cudaMalloc d_L")) { cudaFree(d_mu); return -1; }
 
-    err = cudaMemcpy(d_mu, muHost, 2 * sizeof(float), cudaMemcpyHostToDevice);
-    if (!checkCuda(err, "cudaMemcpy d_mu")) {
-        cudaFree(d_mu); cudaFree(d_L); return -1;
-    }
+    err = cudaMemcpy(d_mu, mu, 2 * sizeof(float), cudaMemcpyHostToDevice);
+    if (!checkCuda(err, "cudaMemcpy d_mu")) { cudaFree(d_mu); cudaFree(d_L); return -1; }
     err = cudaMemcpy(d_L, L, 4 * sizeof(float), cudaMemcpyHostToDevice);
-    if (!checkCuda(err, "cudaMemcpy d_L")) {
-        cudaFree(d_mu); cudaFree(d_L); return -1;
-    }
+    if (!checkCuda(err, "cudaMemcpy d_L")) { cudaFree(d_mu); cudaFree(d_L); return -1; }
 
-    err = cudaEventRecord(stopEvent, 0);
-    if (err != cudaSuccess) logger.errorLine("cudaEventRecord failed stop: ", cudaGetErrorString(err));
-    err = cudaEventSynchronize(stopEvent);
-    if (err != cudaSuccess) logger.errorLine("cudaEventSynchronize failed: ", cudaGetErrorString(err));
+    cudaEventRecord(stopEvent, 0);
+    cudaEventSynchronize(stopEvent);
+    float msUpload = 0.0f;
+    cudaEventElapsedTime(&msUpload, startEvent, stopEvent);
+    logger.infoLine("GPU alloc+copy time (ms): ", msUpload);
 
-    float milliseconds = 0.0f;
-    cudaEventElapsedTime(&milliseconds, startEvent, stopEvent);
-    logger.infoLine("GPU alloc+copy time (measured by events): ", milliseconds, " ms");
+    logger.infoLine("GPU parameters uploaded (no kernel launched).");
 
-    logger.infoLine("Data successfully copied to GPU!");
-
-    // TODO: Launch GPU kernels (simulateReturnsGPU / calculateVaRGPU).
-    // When implemented: use cudaEvent timing around kernel launches, repeat multiple runs, and compute medians.
-
-    // Cleanup GPU memory
+    // cleanup GPU
     cudaFree(d_mu);
     cudaFree(d_L);
     cudaEventDestroy(startEvent);
@@ -482,8 +519,9 @@ int main() {
     logger.infoLine("\nSummary:");
     logger.infoLine(" - Aligned rows used: ", alignedDates.size());
     logger.infoLine(" - CPU sample generation time (ms): ", cpuMs);
-    logger.infoLine(" - GPU parameter upload time (ms): ", milliseconds);
+    logger.infoLine(" - GPU param upload time (ms): ", msUpload);
 
-    // End main (Logger destructor writes run footer)
+    // If you want logs per run (timestamped), run the binary with redirection or keep the Logger file.
+
     return 0;
 }
