@@ -1,9 +1,6 @@
-#ifndef SIMULATE_CPU_H
-#define SIMULATE_CPU_H
-
+// File: simulate_cpu.h
+#pragma once
 #include <vector>
 
-// CPU-based simulation function declaration
+// CPU version calculation
 std::vector<float> simulateReturnsCPU(int numPaths, float meanReturn, float stdDev);
-
-#endif

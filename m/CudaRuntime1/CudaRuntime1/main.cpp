@@ -446,13 +446,16 @@ int main(int argc, char** argv) {
 
     // GPU Monte Carlo VaR Call
     float gpuVaR = 0.0f, gpuCVaR = 0.0f, gpuMs = 0.0f;
-    bool ok = simulateReturnsGPU(Ngpu, numAssets, mu.data(), L.data(), weights.data(), seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &gpuMs);
+
+    // NEW VARIABLES FOR PROFIT PROJECTIONS
+    float expReturn = 0.0f, probProfit = 0.0f, optGain = 0.0f;
+
+    bool ok = simulateReturnsGPU(Ngpu, numAssets, mu.data(), L.data(), weights.data(), seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &expReturn, &probProfit, &optGain, &gpuMs);
 
     if (!ok) {
         logger.errorLine("GPU simulation failed");
     }
     else {
-        // Calculate Relative Differences as Percentages
         auto rel = [](double a, double b)->double {
             if (b == 0.0) return std::abs(a - b);
             return std::abs((a - b) / b) * 100.0;
@@ -461,13 +464,12 @@ int main(int argc, char** argv) {
         double varDiff = rel(cpuVaR, gpuVaR);
         double cvarDiff = rel(cpuCVaR, gpuCVaR);
 
-        // Calculate Projected CPU Time and True Speedup
         double workloadMultiplier = static_cast<double>(Ngpu) / static_cast<double>(Ncpu);
         double projectedCpuMs = cpuMs * workloadMultiplier;
         double speedup = projectedCpuMs / gpuMs;
 
         // ---------------------------------------------------------
-        // PROFESSIONAL PERFORMANCE REPORT
+        // PROFESSIONAL PERFORMANCE & PROFIT REPORT
         // ---------------------------------------------------------
         logger.infoLine("\n======================================================");
         logger.infoLine("       MONTE CARLO SIMULATION PERFORMANCE REPORT      ");
@@ -479,18 +481,26 @@ int main(int argc, char** argv) {
         logger.infoLine("   - GPU Workload     : ", Ngpu, " paths (", workloadMultiplier, "x heavier)");
         logger.infoLine("   - Confidence Level : ", alpha * 100, "%");
         logger.infoLine("------------------------------------------------------");
-        logger.infoLine("2. RISK METRICS (VaR & CVaR)");
+        logger.infoLine("2. RISK METRICS (DEFENSE: What could I lose?)");
         logger.infoLine("   [CPU] VaR: ", cpuVaR, "  |  CVaR: ", cpuCVaR);
         logger.infoLine("   [GPU] VaR: ", gpuVaR, "  |  CVaR: ", gpuCVaR);
         logger.infoLine("   [Diff ] VaR: ", varDiff, "%  |  CVaR: ", cvarDiff, "%");
-        logger.infoLine("   -> Result: GPU accuracy is exceptionally high!");
         logger.infoLine("------------------------------------------------------");
-        logger.infoLine("3. PERFORMANCE & ACCELERATION");
+
+        // NEW SECTION: PROFIT PROJECTIONS
+        logger.infoLine("3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)");
+        logger.infoLine("   [MEAN ] Expected Average Return : ", expReturn * 100.0f, " %");
+        logger.infoLine("   [WIN %] Probability of Profit   : ", probProfit, " %");
+        logger.infoLine("   [PEAK ] Optimistic Peak Gain    : ", optGain * 100.0f, " % (Best ", (1.0 - alpha) * 100, "% of scenarios)");
+        logger.infoLine("------------------------------------------------------");
+
+        logger.infoLine("4. PERFORMANCE & ACCELERATION");
         logger.infoLine("   [CPU] Measured Time (", Ncpu, ") : ", cpuMs, " ms");
         logger.infoLine("   [GPU] Measured Time (", Ngpu, ") : ", gpuMs, " ms");
         logger.infoLine("   [Proj ] Projected CPU Time for ", Ngpu, " : ~", projectedCpuMs, " ms");
         logger.infoLine("   [WIN  ] GPU is ", speedup, " TIMES FASTER than CPU!");
         logger.infoLine("======================================================\n");
     }
+
     return 0;
 }

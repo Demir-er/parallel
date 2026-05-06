@@ -1,19 +1,22 @@
+// File: simulate_gpu.cu
+
 #include "simulate_gpu.h"
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h> // NEW: Resolves IDE IntelliSense errors for blockIdx, gridDim, etc.
+#include <device_launch_parameters.h> 
 #include <curand_kernel.h>
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #include <thrust/reduce.h>
+#include <thrust/count.h> 
 #include <thrust/execution_policy.h>
 #include <thrust/transform_reduce.h>
 #include <cstdio>
 
-// CUDA error check macro
+// Macro for early return on CUDA errors
 #define CUDA_CHECK_RET(x) do { cudaError_t err = (x); if (err != cudaSuccess) { \
     printf("CUDA error %s:%d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err)); return false; } } while(0)
 
-// Define maximum asset limit to prevent register spilling (Max 192 was used in the referenced paper)
+// Define maximum asset limit to prevent register spilling 
 #define MAX_ASSETS 256 
 
 __global__ void generate_portfolio_pl_kernel(std::size_t N, int numAssets, const float* mu, const float* L, const float* weights, float* outPL, std::uint64_t seed) {
@@ -46,14 +49,19 @@ __global__ void generate_portfolio_pl_kernel(std::size_t N, int numAssets, const
     }
 }
 
-// CVaR Filtering Function for Thrust
+// Functor for CVaR filtering
 struct LeQValue {
     float q;
     __host__ __device__ LeQValue(float _q = 0.0f) : q(_q) {}
     __host__ __device__ float operator()(const float& x) const { return (x <= q) ? x : 0.0f; }
 };
 
-extern "C" bool simulateReturnsGPU(std::size_t N, int numAssets, const float* mu, const float* L, const float* weights, std::uint64_t seed, float alpha, float* outVaR, float* outCVaR, float* outKernelMs) {
+// Functor to check if the scenario is profitable
+struct IsPositive {
+    __host__ __device__ bool operator()(const float& x) const { return x > 0.0f; }
+};
+
+extern "C" bool simulateReturnsGPU(std::size_t N, int numAssets, const float* mu, const float* L, const float* weights, std::uint64_t seed, float alpha, float* outVaR, float* outCVaR, float* outExpectedReturn, float* outProbProfit, float* outOptimistic, float* outKernelMs) {
     if (N == 0 || !mu || !L || !weights || !outVaR || !outCVaR) return false;
     if (!(alpha > 0.0f && alpha < 1.0f)) return false;
 
@@ -61,7 +69,7 @@ extern "C" bool simulateReturnsGPU(std::size_t N, int numAssets, const float* mu
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    // GPU Memory Allocation for dynamic arrays
+    // GPU Memory Allocation for dynamic N-Dimensional arrays
     float* d_mu, * d_L, * d_weights, * d_pl;
     CUDA_CHECK_RET(cudaMalloc(&d_mu, numAssets * sizeof(float)));
     CUDA_CHECK_RET(cudaMalloc(&d_L, numAssets * numAssets * sizeof(float)));
@@ -78,30 +86,41 @@ extern "C" bool simulateReturnsGPU(std::size_t N, int numAssets, const float* mu
     // Kernel Launch Parameters
     int blockSize = 256;
     int numBlocks = (N + blockSize - 1) / blockSize;
-
-    // Using grid stride loop to prevent GPU idling (capping blocks at 1024)
     if (numBlocks > 1024) numBlocks = 1024;
 
     generate_portfolio_pl_kernel << <numBlocks, blockSize >> > (N, numAssets, d_mu, d_L, d_weights, d_pl, seed);
     CUDA_CHECK_RET(cudaGetLastError());
 
-    // Sorting P/L Values (Thrust is substantially faster than a manual merge-sort Kernel)
+    // Sort the P/L values using Thrust
     thrust::device_ptr<float> dev_ptr(d_pl);
     thrust::sort(thrust::device, dev_ptr, dev_ptr + N);
 
-    // Percentile Index Calculation
+    // 1. VaR & CVaR Calculations (Risk/Loss)
     double tailFrac = 1.0 - static_cast<double>(alpha);
     std::size_t raw = static_cast<std::size_t>(tailFrac * static_cast<double>(N));
     std::size_t target_idx = (raw == 0) ? 0 : ((raw - 1 >= N) ? (N - 1) : (raw - 1));
 
-    // VaR Extraction and Sign Correction
     float vaR_val = 0.0f;
     CUDA_CHECK_RET(cudaMemcpy(&vaR_val, d_pl + target_idx, sizeof(float), cudaMemcpyDeviceToHost));
     *outVaR = -vaR_val;
 
-    // CVaR Extraction and Sign Correction
-    float sum = thrust::transform_reduce(thrust::device, dev_ptr, dev_ptr + target_idx + 1, LeQValue(vaR_val), 0.0f, thrust::plus<float>());
-    *outCVaR = -(sum / (target_idx + 1));
+    float sumCVaR = thrust::transform_reduce(thrust::device, dev_ptr, dev_ptr + target_idx + 1, LeQValue(vaR_val), 0.0f, thrust::plus<float>());
+    *outCVaR = -(sumCVaR / (target_idx + 1));
+
+    // 2. Expected Return (Mean of all Scenarios)
+    float sumAll = thrust::reduce(thrust::device, dev_ptr, dev_ptr + N, 0.0f, thrust::plus<float>());
+    *outExpectedReturn = sumAll / static_cast<float>(N);
+
+    // 3. Probability of Profit (Win Rate)
+    int positiveCount = thrust::count_if(thrust::device, dev_ptr, dev_ptr + N, IsPositive());
+    *outProbProfit = (static_cast<float>(positiveCount) / static_cast<float>(N)) * 100.0f;
+
+    // 4. Optimistic Scenario (Best tail boundary)
+    std::size_t opt_raw = static_cast<std::size_t>(static_cast<double>(alpha) * static_cast<double>(N));
+    std::size_t opt_idx = (opt_raw == 0) ? 0 : ((opt_raw >= N) ? (N - 1) : opt_raw);
+    float opt_val = 0.0f;
+    CUDA_CHECK_RET(cudaMemcpy(&opt_val, d_pl + opt_idx, sizeof(float), cudaMemcpyDeviceToHost));
+    *outOptimistic = opt_val;
 
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);

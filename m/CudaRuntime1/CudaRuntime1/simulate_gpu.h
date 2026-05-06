@@ -1,7 +1,5 @@
-
-#ifndef SIMULATE_GPU_H
-#define SIMULATE_GPU_H
-
+// File: simulate_gpu.h
+#pragma once
 #include <cstddef>
 #include <cstdint>
 
@@ -9,7 +7,6 @@
 extern "C" {
 #endif
 
-    // GPU-based simulation function declaration (N-Dimensional)
     bool simulateReturnsGPU(std::size_t N,
         int numAssets,
         const float* mu,
@@ -19,10 +16,11 @@ extern "C" {
         float alpha,
         float* outVaR,
         float* outCVaR,
+        float* outExpectedReturn,
+        float* outProbProfit,
+        float* outOptimistic,
         float* outKernelMs);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

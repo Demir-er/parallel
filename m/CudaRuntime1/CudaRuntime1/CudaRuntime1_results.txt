@@ -552,3 +552,105 @@ Summary:
 
 ----- End run -----
 
+----- Run at 2026-05-06 23:29:42 -----
+2026-05-06 23:29:42 INFO: 
+======================================================
+2026-05-06 23:29:42 INFO:          INITIALIZING MONTE CARLO VaR ENGINE          
+2026-05-06 23:29:42 INFO: ======================================================
+2026-05-06 23:29:42 INFO: [+] Configuration Settings
+2026-05-06 23:29:42 INFO:     - GPU Target Paths : 2000000
+2026-05-06 23:29:42 INFO:     - Confidence Level : 95%
+2026-05-06 23:29:42 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-06 23:29:42 INFO:     - Asset Weights    : [1, 1]
+
+2026-05-06 23:29:42 INFO: [+] Data Processing (Historical CSVs)
+2026-05-06 23:29:42 INFO:     - Raw Rows Read    : Aselsan = 503 | THY = 503
+2026-05-06 23:29:42 INFO:     - Aligned Dates    : 503 valid trading days matched
+
+2026-05-06 23:29:42 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-06 23:29:42 INFO:     - Covariance Matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 23:29:42 INFO:     - Cholesky (L)     : [0.030897, 0, -0.00136844, 0.00176469]
+
+2026-05-06 23:29:42 INFO: [+] Hardware Execution Phase
+2026-05-06 23:29:42 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-06 23:29:43 INFO: 
+======================================================
+2026-05-06 23:29:43 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-06 23:29:43 INFO: ======================================================
+2026-05-06 23:29:43 INFO: 1. SIMULATION PARAMETERS
+2026-05-06 23:29:43 INFO:    - Portfolio Assets : 2
+2026-05-06 23:29:43 INFO:    - Historical Days  : 503
+2026-05-06 23:29:43 INFO:    - CPU Workload     : 20000 paths
+2026-05-06 23:29:43 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-06 23:29:43 INFO:    - Confidence Level : 95%
+2026-05-06 23:29:43 INFO: ------------------------------------------------------
+2026-05-06 23:29:43 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-06 23:29:43 INFO:    [CPU] VaR: 0.0449455  |  CVaR: 0.0572825
+2026-05-06 23:29:43 INFO:    [GPU] VaR: 0.0448872  |  CVaR: 0.057209
+2026-05-06 23:29:43 INFO:    [Diff ] VaR: 0.129792%  |  CVaR: 0.128581%
+2026-05-06 23:29:43 INFO: ------------------------------------------------------
+2026-05-06 23:29:43 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-06 23:29:43 INFO:    [MEAN ] Expected Average Return : 0.37692 %
+2026-05-06 23:29:43 INFO:    [WIN %] Probability of Profit   : 55.0797 %
+2026-05-06 23:29:43 INFO:    [PEAK ] Optimistic Peak Gain    : 5.23954 % (Best 5% of scenarios)
+2026-05-06 23:29:43 INFO: ------------------------------------------------------
+2026-05-06 23:29:43 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-06 23:29:43 INFO:    [CPU] Measured Time (20000) : 24.8287 ms
+2026-05-06 23:29:43 INFO:    [GPU] Measured Time (2000000) : 227.518 ms
+2026-05-06 23:29:43 INFO:    [Proj ] Projected CPU Time for 2000000 : ~2482.87 ms
+2026-05-06 23:29:43 INFO:    [WIN  ] GPU is 10.9128 TIMES FASTER than CPU!
+2026-05-06 23:29:43 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-06 23:30:02 -----
+2026-05-06 23:30:02 INFO: 
+======================================================
+2026-05-06 23:30:02 INFO:          INITIALIZING MONTE CARLO VaR ENGINE          
+2026-05-06 23:30:02 INFO: ======================================================
+2026-05-06 23:30:02 INFO: [+] Configuration Settings
+2026-05-06 23:30:02 INFO:     - GPU Target Paths : 2000000
+2026-05-06 23:30:02 INFO:     - Confidence Level : 95%
+2026-05-06 23:30:02 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-06 23:30:02 INFO:     - Asset Weights    : [1, 1]
+
+2026-05-06 23:30:02 INFO: [+] Data Processing (Historical CSVs)
+2026-05-06 23:30:02 INFO:     - Raw Rows Read    : Aselsan = 503 | THY = 503
+2026-05-06 23:30:02 INFO:     - Aligned Dates    : 503 valid trading days matched
+
+2026-05-06 23:30:02 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-06 23:30:02 INFO:     - Covariance Matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 23:30:02 INFO:     - Cholesky (L)     : [0.030897, 0, -0.00136844, 0.00176469]
+
+2026-05-06 23:30:02 INFO: [+] Hardware Execution Phase
+2026-05-06 23:30:02 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-06 23:30:03 INFO: 
+======================================================
+2026-05-06 23:30:03 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-06 23:30:03 INFO: ======================================================
+2026-05-06 23:30:03 INFO: 1. SIMULATION PARAMETERS
+2026-05-06 23:30:03 INFO:    - Portfolio Assets : 2
+2026-05-06 23:30:03 INFO:    - Historical Days  : 503
+2026-05-06 23:30:03 INFO:    - CPU Workload     : 20000 paths
+2026-05-06 23:30:03 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-06 23:30:03 INFO:    - Confidence Level : 95%
+2026-05-06 23:30:03 INFO: ------------------------------------------------------
+2026-05-06 23:30:03 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-06 23:30:03 INFO:    [CPU] VaR: 0.0447476  |  CVaR: 0.057555
+2026-05-06 23:30:03 INFO:    [GPU] VaR: 0.0448872  |  CVaR: 0.057209
+2026-05-06 23:30:03 INFO:    [Diff ] VaR: 0.311047%  |  CVaR: 0.604894%
+2026-05-06 23:30:03 INFO: ------------------------------------------------------
+2026-05-06 23:30:03 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-06 23:30:03 INFO:    [MEAN ] Expected Average Return : 0.37692 %
+2026-05-06 23:30:03 INFO:    [WIN %] Probability of Profit   : 55.0797 %
+2026-05-06 23:30:03 INFO:    [PEAK ] Optimistic Peak Gain    : 5.23954 % (Best 5% of scenarios)
+2026-05-06 23:30:03 INFO: ------------------------------------------------------
+2026-05-06 23:30:03 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-06 23:30:03 INFO:    [CPU] Measured Time (20000) : 27.6767 ms
+2026-05-06 23:30:03 INFO:    [GPU] Measured Time (2000000) : 206.664 ms
+2026-05-06 23:30:03 INFO:    [Proj ] Projected CPU Time for 2000000 : ~2767.67 ms
+2026-05-06 23:30:03 INFO:    [WIN  ] GPU is 13.3921 TIMES FASTER than CPU!
+2026-05-06 23:30:03 INFO: ======================================================
+
+----- End run -----
+
