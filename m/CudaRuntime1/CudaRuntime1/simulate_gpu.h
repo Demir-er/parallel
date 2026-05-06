@@ -1,4 +1,7 @@
-#pragma once
+
+#ifndef SIMULATE_GPU_H
+#define SIMULATE_GPU_H
+
 #include <cstddef>
 #include <cstdint>
 
@@ -6,16 +9,20 @@
 extern "C" {
 #endif
 
-bool simulateReturnsGPU(std::size_t N,
-                        const float mu[2],
-                        const float L[4],
-                        const float weights[2],
-                        std::uint64_t seed,
-                        float alpha,
-                        float* outVaR,
-                        float* outCVaR,
-                        float* outKernelMs);
+    // GPU-based simulation function declaration (N-Dimensional)
+    bool simulateReturnsGPU(std::size_t N,
+        int numAssets,
+        const float* mu,
+        const float* L,
+        const float* weights,
+        std::uint64_t seed,
+        float alpha,
+        float* outVaR,
+        float* outCVaR,
+        float* outKernelMs);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

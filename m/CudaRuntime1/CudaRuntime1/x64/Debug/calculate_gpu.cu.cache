@@ -8,7 +8,7 @@ AdditionalOptions=-std=c++17
 AdditionalOptions=-std=c++17
 CodeGeneration=compute_75,sm_75
 CodeGeneration=compute_75,sm_75
-CompileOut=D:\ComputerEng Hacettepe Master\CMP674- Parallel Computing with GPUs\Projects\Yeni klasör\m\CudaRuntime1\CudaRuntime1\x64\Debug\calculate_gpu.cu.obj
+CompileOut=D:\ComputerEng Hacettepe Master\CMP674- Parallel Computing with GPUs\Projects\last\parallel\m\CudaRuntime1\CudaRuntime1\x64\Debug\calculate_gpu.cu.obj
 CudaRuntime=Hybrid
 CudaToolkitCustomDir=
 DebugInformationFormat=ProgramDatabase

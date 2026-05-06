@@ -376,3 +376,99 @@ Summary:
 2026-05-01 23:49:31 INFO: Summary: aligned rows=503 CPU ms=6.9563 GPU ms=212.912
 ----- End run -----
 
+----- Run at 2026-05-06 21:20:02 -----
+2026-05-06 21:20:02 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 21:20:02 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 21:20:02 INFO: Aligned rows: 503
+2026-05-06 21:20:02 INFO: Cov matrix: [0.000694134 0.000124771] [0.000124771 0.000369093]
+2026-05-06 21:20:02 INFO: Cholesky L: 0.0263464, 0.00473578, 0.018619
+2026-05-06 21:20:02 INFO: Generating CPU samples (N=20000) seed=0
+2026-05-06 21:20:02 INFO: CPU generation time (ms): 14.3771
+2026-05-06 21:20:02 INFO: CPU VaR=0.0567593 CVaR=0.0717851
+2026-05-06 21:20:02 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 21:20:04 INFO: GPU kernel+select time (ms) = 253.522
+2026-05-06 21:20:04 INFO: GPU VaR=-0.0558077 GPU CVaR=-0.0709222
+2026-05-06 21:20:04 INFO: Comparison CPU vs GPU: VaR rel diff=2.01705 CVaR rel diff=2.01217
+2026-05-06 21:20:04 INFO: Summary: aligned rows=503 CPU ms=14.3771 GPU ms=253.522
+----- End run -----
+
+----- Run at 2026-05-06 21:56:27 -----
+2026-05-06 21:56:27 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 21:56:27 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 21:56:27 INFO: Aligned rows: 503
+2026-05-06 21:56:27 INFO: Cov matrix: [0.000694134 0.000124771] [0.000124771 0.000369093]
+2026-05-06 21:56:27 INFO: Cholesky L: 0.0263464, 0.00473578, 0.018619
+2026-05-06 21:56:27 INFO: Generating CPU samples (N=20000) seed=0
+2026-05-06 21:56:27 INFO: CPU generation time (ms): 5.9168
+2026-05-06 21:56:27 INFO: CPU VaR=0.0565058 CVaR=0.0718343
+2026-05-06 21:56:27 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 21:56:29 INFO: GPU kernel+select time (ms) = 232.748
+2026-05-06 21:56:29 INFO: GPU VaR=-0.0558089 GPU CVaR=-0.0708736
+2026-05-06 21:56:29 INFO: Comparison CPU vs GPU: VaR rel diff=2.01249 CVaR rel diff=2.01356
+2026-05-06 21:56:29 INFO: Summary: aligned rows=503 CPU ms=5.9168 GPU ms=232.748
+----- End run -----
+
+----- Run at 2026-05-06 22:19:27 -----
+2026-05-06 22:19:27 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 22:19:27 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 22:19:27 INFO: Aligned rows: 503
+2026-05-06 22:19:27 INFO: Cov matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:19:27 INFO: Cholesky L: [0.030897, 0, -0.00136844, 0.00176469]
+2026-05-06 22:19:27 INFO: Generating CPU calculations (N=20000) seed=0
+2026-05-06 22:19:27 INFO: CPU full calculation time (ms): 31.4593
+2026-05-06 22:19:27 INFO: CPU VaR=0.0439155 CVaR=0.056365
+2026-05-06 22:19:27 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 22:19:29 INFO: GPU kernel+select time (ms) = 230.295
+2026-05-06 22:19:29 INFO: GPU VaR=-0.044859 GPU CVaR=-0.0572612
+2026-05-06 22:19:29 INFO: Comparison CPU vs GPU: VaR rel diff=1.97897 CVaR rel diff=1.98435
+2026-05-06 22:19:29 INFO: Summary: aligned rows=503 CPU ms=31.4593 GPU ms=230.295
+----- End run -----
+
+----- Run at 2026-05-06 22:32:51 -----
+2026-05-06 22:32:51 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 22:32:51 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 22:32:51 INFO: Aligned rows: 503
+2026-05-06 22:32:51 INFO: Cov matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:32:51 INFO: Cholesky L: [0.030897, 0, -0.00136844, 0.00176469]
+2026-05-06 22:32:51 INFO: Generating CPU calculations (N=20000) seed=0
+2026-05-06 22:32:51 INFO: CPU full calculation time (ms): 27.9293
+2026-05-06 22:32:51 INFO: CPU VaR=0.0449883 CVaR=0.0573803
+2026-05-06 22:32:51 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 22:32:52 INFO: GPU kernel+select time (ms) = 160.234
+2026-05-06 22:32:52 INFO: GPU VaR=0.0448872 GPU CVaR=0.057209
+2026-05-06 22:32:52 INFO: Comparison CPU vs GPU: VaR rel diff=0.00225166 CVaR rel diff=0.00299435
+2026-05-06 22:32:52 INFO: Summary: aligned rows=503 CPU ms=27.9293 GPU ms=160.234
+----- End run -----
+
+----- Run at 2026-05-06 22:34:58 -----
+2026-05-06 22:34:58 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 22:34:58 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 22:34:58 INFO: Aligned rows: 503
+2026-05-06 22:34:58 INFO: Cov matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:34:58 INFO: Cholesky L: [0.030897, 0, -0.00136844, 0.00176469]
+2026-05-06 22:34:58 INFO: Generating CPU calculations (N=20000) seed=0
+2026-05-06 22:34:58 INFO: CPU full calculation time (ms): 30.0314
+2026-05-06 22:34:58 INFO: CPU VaR=0.044871 CVaR=0.0573283
+2026-05-06 22:34:58 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 22:34:59 INFO: GPU kernel+select time (ms) = 158.983
+2026-05-06 22:34:59 INFO: GPU VaR=0.0448872 GPU CVaR=0.057209
+2026-05-06 22:34:59 INFO: Comparison CPU vs GPU: VaR rel diff=0.000360933 CVaR rel diff=0.00208636
+2026-05-06 22:34:59 INFO: Summary: aligned rows=503 CPU ms=30.0314 GPU ms=158.983
+----- End run -----
+
+----- Run at 2026-05-06 22:38:11 -----
+2026-05-06 22:38:11 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 22:38:11 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 22:38:11 INFO: Aligned rows: 503
+2026-05-06 22:38:11 INFO: Cov matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:38:11 INFO: Cholesky L: [0.030897, 0, -0.00136844, 0.00176469]
+2026-05-06 22:38:11 INFO: Generating CPU calculations (N=20000) seed=0
+2026-05-06 22:38:11 INFO: CPU full calculation time (ms): 24.7381
+2026-05-06 22:38:11 INFO: CPU VaR=0.0439894 CVaR=0.0558137
+2026-05-06 22:38:11 INFO: Launching GPU Monte Carlo VaR: Ngpu=2000000
+2026-05-06 22:38:12 INFO: GPU kernel+select time (ms) = 154.547
+2026-05-06 22:38:12 INFO: GPU VaR=0.0448872 GPU CVaR=0.057209
+2026-05-06 22:38:12 INFO: Comparison CPU vs GPU: VaR rel diff=0.0200012 CVaR rel diff=0.0243881
+2026-05-06 22:38:12 INFO: Summary: aligned rows=503 CPU ms=24.7381 GPU ms=154.547
+----- End run -----
+

@@ -1,7 +1,3 @@
-// File: CudaRuntime1/main.cpp
-// Upgraded: full-CSV parser (prefers Adj Close), log-returns, logger, alignment, CPU sampling,
-// GPU Monte-Carlo VaR integration. Targets C++17.
-
 #include <iostream>
 #include <array>
 #include <vector>
@@ -26,7 +22,20 @@
 #include "output.h"
 
 // -----------------------------
-// Simple Logger (console + append file)
+// Operator overload to print std::vector
+// -----------------------------
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
+    os << "[";
+    for (size_t i = 0; i < v.size(); ++i) {
+        os << v[i] << (i == v.size() - 1 ? "" : ", ");
+    }
+    os << "]";
+    return os;
+}
+
+// -----------------------------
+// Simple Logger
 // -----------------------------
 class Logger {
     std::ofstream file_;
@@ -87,18 +96,7 @@ public:
 };
 
 // -----------------------------
-// CUDA error checking helper
-// -----------------------------
-inline bool checkCuda(cudaError_t err, const char* msg = "") {
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA Error: " << msg << " : " << cudaGetErrorString(err) << std::endl;
-        return false;
-    }
-    return true;
-}
-
-// -----------------------------
-// CSV Row struct & parser that detects Adj Close
+// CSV Row struct & parser 
 // -----------------------------
 struct CsvRow {
     std::string date;
@@ -108,20 +106,17 @@ struct CsvRow {
     float close = 0.0f;
     float adjClose = 0.0f;
     long long volume = 0;
-    bool hasAdj = false; // indicates whether adjClose is valid for this row
-    bool valid = false;  // indicates row parsed successfully
+    bool hasAdj = false;
+    bool valid = false;
 };
 
-// Trim helper
-static void trimInPlace(std::string &s) {
+static void trimInPlace(std::string& s) {
     size_t a = s.find_first_not_of(" \t\r\n");
     if (a == std::string::npos) { s.clear(); return; }
     size_t b = s.find_last_not_of(" \t\r\n");
     s = s.substr(a, b - a + 1);
 }
 
-// Parse CSV into vector<CsvRow>. Detect if header contains "Adj Close".
-// Returns true if at least one row parsed.
 bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool& headerHasAdj) {
     outRows.clear();
     headerHasAdj = false;
@@ -131,7 +126,7 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
 
     std::string line;
     if (!std::getline(file, line)) return false;
-    // parse header to find column indices
+
     std::vector<std::string> headerFields;
     {
         std::string cur;
@@ -143,33 +138,32 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
         }
         headerFields.push_back(cur);
     }
-    // map header names (lowercase) to indices
+
     std::unordered_map<std::string, int> idx;
     for (size_t i = 0; i < headerFields.size(); ++i) {
         std::string h = headerFields[i];
         trimInPlace(h);
-        std::transform(h.begin(), h.end(), h.begin(), [](unsigned char c){ return std::tolower(c); });
+        std::transform(h.begin(), h.end(), h.begin(), [](unsigned char c) { return std::tolower(c); });
         idx[h] = static_cast<int>(i);
     }
-    // Common names: "date", "open", "high", "low", "close", "adj close" or "adj_close" or "adjusted close", "volume"
+
     auto findIndex = [&](const std::vector<std::string>& candidates)->int {
-        for (auto &c : candidates) {
+        for (auto& c : candidates) {
             auto it = idx.find(c);
             if (it != idx.end()) return it->second;
         }
         return -1;
-    };
-    int dateIdx = findIndex({"date"});
-    int openIdx = findIndex({"open"});
-    int highIdx = findIndex({"high"});
-    int lowIdx = findIndex({"low"});
-    int closeIdx = findIndex({"close"});
-    int adjIdx = findIndex({"adj close", "adj_close", "adjusted close", "adjusted_close", "adjclose"});
-    int volumeIdx = findIndex({"volume", "vol"});
+        };
+    int dateIdx = findIndex({ "date" });
+    int openIdx = findIndex({ "open" });
+    int highIdx = findIndex({ "high" });
+    int lowIdx = findIndex({ "low" });
+    int closeIdx = findIndex({ "close" });
+    int adjIdx = findIndex({ "adj close", "adj_close", "adjusted close", "adjusted_close", "adjclose" });
+    int volumeIdx = findIndex({ "volume", "vol" });
 
     headerHasAdj = (adjIdx >= 0);
 
-    // parse remaining lines
     while (std::getline(file, line)) {
         std::vector<std::string> fields;
         std::string cur;
@@ -185,25 +179,26 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
         if (dateIdx >= 0 && dateIdx < (int)fields.size()) {
             row.date = fields[dateIdx];
             trimInPlace(row.date);
-        } else {
-            continue; // cannot parse row without date
+        }
+        else {
+            continue;
         }
 
-        auto parseFloat = [&](int idxField, float &outVal) -> bool {
+        auto parseFloat = [&](int idxField, float& outVal) -> bool {
             if (idxField < 0 || idxField >= (int)fields.size()) return false;
             std::string s = fields[idxField];
             trimInPlace(s);
             if (s.empty()) return false;
-            // Replace comma decimals with dot
             std::replace(s.begin(), s.end(), ',', '.');
             try {
                 outVal = std::stof(s);
                 return true;
-            } catch (...) {
+            }
+            catch (...) {
                 return false;
             }
-        };
-        auto parseLong = [&](int idxField, long long &outVal) -> bool {
+            };
+        auto parseLong = [&](int idxField, long long& outVal) -> bool {
             if (idxField < 0 || idxField >= (int)fields.size()) return false;
             std::string s = fields[idxField];
             trimInPlace(s);
@@ -211,10 +206,11 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
             try {
                 outVal = std::stoll(s);
                 return true;
-            } catch (...) {
+            }
+            catch (...) {
                 return false;
             }
-        };
+            };
 
         bool any = false;
         if (parseFloat(openIdx, row.open)) any = true;
@@ -224,34 +220,26 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
         if (parseFloat(adjIdx, row.adjClose)) { row.hasAdj = true; any = true; }
         if (parseLong(volumeIdx, row.volume)) any = true;
 
-        // Mark valid if we parsed at least date and a price (close or adj)
         if (!row.date.empty() && (row.hasAdj || row.close != 0.0f || any)) {
             row.valid = true;
             outRows.push_back(row);
         }
     }
-
     return !outRows.empty();
 }
 
-// -----------------------------
-// Align two series by date (inner join). Preserves order of the first series.
-// For each pair pushes chosen price (adj if present else close).
-// -----------------------------
 void alignByDateRows(const std::vector<CsvRow>& A, bool A_hasAdj,
-                     const std::vector<CsvRow>& B, bool B_hasAdj,
-                     std::vector<float>& outA, std::vector<float>& outB, std::vector<std::string>& outDates) {
-    outA.clear();
-    outB.clear();
-    outDates.clear();
+    const std::vector<CsvRow>& B, bool B_hasAdj,
+    std::vector<float>& outA, std::vector<float>& outB, std::vector<std::string>& outDates) {
+    outA.clear(); outB.clear(); outDates.clear();
     std::unordered_map<std::string, float> mapB;
     mapB.reserve(B.size());
-    for (const auto &r : B) {
+    for (const auto& r : B) {
         if (!r.valid) continue;
         float price = (B_hasAdj && r.hasAdj) ? r.adjClose : r.close;
         mapB[r.date] = price;
     }
-    for (const auto &r : A) {
+    for (const auto& r : A) {
         if (!r.valid) continue;
         auto it = mapB.find(r.date);
         if (it != mapB.end()) {
@@ -263,9 +251,6 @@ void alignByDateRows(const std::vector<CsvRow>& A, bool A_hasAdj,
     }
 }
 
-// -----------------------------
-// Returns: log-returns preferred
-// -----------------------------
 std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
     std::vector<float> returns;
     if (prices.size() < 2) return returns;
@@ -273,18 +258,12 @@ std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
     for (size_t i = 1; i < prices.size(); ++i) {
         float p0 = prices[i - 1];
         float p1 = prices[i];
-        if (p0 <= 0.0f || p1 <= 0.0f) {
-            // skip invalid / zero price points
-            continue;
-        }
+        if (p0 <= 0.0f || p1 <= 0.0f) continue;
         returns.push_back(std::log(p1 / p0));
     }
     return returns;
 }
 
-// -----------------------------
-// Statistical helpers (mean, covariance, cholesky, sampling, stats)
-// -----------------------------
 float calculateMean(const std::vector<float>& returns) {
     if (returns.empty()) return 0.0f;
     float sum = 0.0f;
@@ -292,98 +271,77 @@ float calculateMean(const std::vector<float>& returns) {
     return sum / returns.size();
 }
 
-float calculateCovariance(const std::vector<float>& returnsA,
-                          const std::vector<float>& returnsB,
-                          float meanA, float meanB) {
-    size_t n = std::min(returnsA.size(), returnsB.size());
-    if (n < 2) return 0.0f;
-    float cov = 0.0f;
-    for (size_t i = 0; i < n; ++i) {
-        cov += (returnsA[i] - meanA) * (returnsB[i] - meanB);
+// NEW: N-Dimensional Dynamic Covariance Matrix Calculator
+std::vector<float> calculateCovarianceMatrix(const std::vector<std::vector<float>>& returnsList) {
+    int numAssets = returnsList.size();
+    if (numAssets == 0) return {};
+    int numReturns = returnsList.size(); // fixed out-of-bounds risk
+
+    std::vector<float> covMatrix(numAssets * numAssets, 0.0f);
+    std::vector<float> means(numAssets, 0.0f);
+
+    for (int i = 0; i < numAssets; ++i) {
+        means[i] = calculateMean(returnsList[i]);
     }
-    return cov / (static_cast<float>(n) - 1.0f);
+
+    for (int i = 0; i < numAssets; ++i) {
+        for (int j = 0; j < numAssets; ++j) {
+            float cov = 0.0f;
+            for (int k = 0; k < numReturns; ++k) {
+                cov += (returnsList[i][k] - means[i]) * (returnsList[j][k] - means[j]);
+            }
+            covMatrix[i * numAssets + j] = cov / (numReturns - 1.0f);
+        }
+    }
+    return covMatrix;
 }
 
-bool cholesky2x2(float cov00, float cov01, float cov11, float* L, float jitter = 1e-10f) {
-    if (cov00 <= 0.0f) {
-        if (cov00 > -jitter) cov00 = 0.0f; else return false;
-    }
-    L[0] = std::sqrt(std::max(0.0f, cov00));
-    L[1] = 0.0f;
+// NEW: N-Dimensional Dynamic Cholesky Decomposition
+bool choleskyDecomp(int n, const std::vector<float>& cov, std::vector<float>& L, float jitter = 1e-9f) {
+    L.assign(n * n, 0.0f);
+    std::vector<float> tempCov = cov;
 
-    if (L[0] == 0.0f) {
-        if (std::fabs(cov01) > 1e-12f) {
-            cov00 += jitter;
-            L[0] = std::sqrt(cov00);
-            if (L[0] == 0.0f) return false;
-        } else {
-            L[2] = 0.0f;
-            L[3] = std::sqrt(std::max(0.0f, cov11));
-            return true;
+    // Add a small jitter to diagonal elements for stability
+    for (int i = 0; i < n; ++i) tempCov[i * n + i] += jitter;
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j <= i; j++) {
+            float sum = 0.0f;
+            for (int k = 0; k < j; k++) {
+                sum += L[i * n + k] * L[j * n + k];
+            }
+            if (i == j) {
+                float val = tempCov[i * n + i] - sum;
+                if (val <= 0.0f) return false; // Fails if not positive definite
+                L[i * n + j] = std::sqrt(val);
+            }
+            else {
+                L[i * n + j] = (tempCov[i * n + j] - sum) / L[j * n + j];
+            }
         }
     }
-
-    L[2] = cov01 / L[0];
-
-    float tmp = cov11 - (L[2] * L[2]);
-    if (tmp < 0.0f) {
-        if (tmp > -1e-8f) tmp = 0.0f;
-        else {
-            cov11 += jitter;
-            tmp = cov11 - (L[2] * L[2]);
-            if (tmp < 0.0f) return false;
-        }
-    }
-    L[3] = std::sqrt(tmp);
     return true;
 }
 
-bool generateCorrelatedSamplesCPU(size_t N, const float mu[2], const float L[4], std::vector<std::array<float,2>>& outSamples, uint64_t seed = 0) {
-    outSamples.clear();
-    outSamples.reserve(N);
-
-    std::mt19937_64 rng;
-    if (seed) rng.seed(static_cast<unsigned long long>(seed));
-    else rng.seed((unsigned long long)std::chrono::high_resolution_clock::now().time_since_epoch().count());
-
+// NEW: N-Dimensional CPU Random Number and Correlation Generator
+bool generateCorrelatedSamplesCPU(size_t N_samples, int numAssets, const std::vector<float>& mu, const std::vector<float>& L, std::vector<float>& outSamples, uint64_t seed = 0) {
+    outSamples.assign(N_samples * numAssets, 0.0f);
+    std::mt19937_64 rng(seed ? seed : std::chrono::high_resolution_clock::now().time_since_epoch().count());
     std::normal_distribution<float> nd(0.0f, 1.0f);
 
-    for (size_t i = 0; i < N; ++i) {
-        float z0 = nd(rng);
-        float z1 = nd(rng);
-        float x0 = mu[0] + L[0] * z0;
-        float x1 = mu[1] + L[2] * z0 + L[3] * z1;
-        outSamples.push_back({x0, x1});
+    for (size_t i = 0; i < N_samples; ++i) {
+        std::vector<float> z(numAssets);
+        for (int j = 0; j < numAssets; ++j) z[j] = nd(rng);
+
+        for (int j = 0; j < numAssets; ++j) {
+            float val = mu[j];
+            for (int k = 0; k <= j; ++k) {
+                val += L[j * numAssets + k] * z[k];
+            }
+            outSamples[i * numAssets + j] = val;
+        }
     }
     return true;
-}
-
-void computeSampleStats(const std::vector<std::array<float,2>>& samples,
-                        float& mean0, float& mean1,
-                        float& cov00, float& cov01, float& cov11) {
-    mean0 = mean1 = cov00 = cov01 = cov11 = 0.0f;
-    size_t n = samples.size();
-    if (n == 0) return;
-
-    for (const auto &s : samples) {
-        mean0 += s[0];
-        mean1 += s[1];
-    }
-    mean0 /= n;
-    mean1 /= n;
-
-    if (n < 2) return;
-    for (const auto &s : samples) {
-        float a = s[0] - mean0;
-        float b = s[1] - mean1;
-        cov00 += a * a;
-        cov01 += a * b;
-        cov11 += b * b;
-    }
-    float denom = static_cast<float>(n - 1);
-    cov00 /= denom;
-    cov01 /= denom;
-    cov11 /= denom;
 }
 
 // -----------------------------
@@ -392,23 +350,22 @@ void computeSampleStats(const std::vector<std::array<float,2>>& samples,
 int main(int argc, char** argv) {
     Logger logger("CudaRuntime1_results.txt");
 
-    // CLI defaults
+    // Default CLI parameters
     size_t Ngpu = 2 * 1000 * 1000;
     double alpha = 0.95;
-    uint64_t seed = 0; // 0 = time-based
+    uint64_t seed = 0;
     float w0 = 1.0f, w1 = 1.0f;
 
-    // Simple CLI parsing (order: Ngpu alpha seed w0 w1)
-    if (argc >= 2) Ngpu = static_cast<size_t>(std::stoull(argv[1]));
+    if (argc >= 2) Ngpu = static_cast<size_t>(std::stoull(argv[1])); // Fixed from std::stoull(argv)
     if (argc >= 3) alpha = std::stod(argv[2]);
     if (argc >= 4) seed = static_cast<uint64_t>(std::stoull(argv[3]));
     if (argc >= 6) { w0 = std::stof(argv[4]); w1 = std::stof(argv[5]); }
 
     logger.infoLine("CLI: Ngpu=", Ngpu, " alpha=", alpha, " seed=", seed, " weights=[", w0, ",", w1, "]");
 
-    // Read CSVs (reuse your readCsvFull)
+    // Read CSV files
     std::vector<CsvRow> rowsA, rowsB;
-    bool aHasAdj=false, bHasAdj=false;
+    bool aHasAdj = false, bHasAdj = false;
     if (!readCsvFull("aselsan2year.csv", rowsA, aHasAdj)) {
         logger.errorLine("Failed to read aselsan2year.csv"); return -1;
     }
@@ -417,68 +374,86 @@ int main(int argc, char** argv) {
     }
     logger.infoLine("Read rows: Aselsan=", rowsA.size(), " THY=", rowsB.size());
 
-    // Align and get prices vectors
+    // Align by date
     std::vector<float> aPricesAligned, tPricesAligned;
     std::vector<std::string> alignedDates;
     alignByDateRows(rowsA, aHasAdj, rowsB, bHasAdj, aPricesAligned, tPricesAligned, alignedDates);
     logger.infoLine("Aligned rows: ", alignedDates.size());
     if (alignedDates.size() < 2) { logger.errorLine("Not enough aligned rows"); return -1; }
 
-    // compute log returns
-    auto returnsA = calculateLogReturns(aPricesAligned);
-    auto returnsB = calculateLogReturns(tPricesAligned);
-    if (returnsA.empty() || returnsB.empty()) { logger.errorLine("No returns"); return -1; }
+    // Preparation for N-Asset architecture
+    std::vector<std::vector<float>> allReturns;
+    allReturns.push_back(calculateLogReturns(aPricesAligned));
+    allReturns.push_back(calculateLogReturns(tPricesAligned));
+    int numAssets = allReturns.size();
 
-    float meanA = calculateMean(returnsA);
-    float meanB = calculateMean(returnsB);
-    float cov00 = calculateCovariance(returnsA, returnsA, meanA, meanA);
-    float cov01 = calculateCovariance(returnsA, returnsB, meanA, meanB);
-    float cov11 = calculateCovariance(returnsB, returnsB, meanB, meanB);
+    std::vector<float> mu(numAssets, 0.0f);
+    for (int i = 0; i < numAssets; ++i) {
+        mu[i] = calculateMean(allReturns[i]);
+    }
 
-    logger.infoLine("Cov matrix: [", cov00, " ", cov01, "] [", cov01, " ", cov11, "]");
+    std::vector<float> weights = { w0, w1 }; // Can be dynamically sized in the future
 
-    float L[4] = {0,0,0,0};
-    if (!cholesky2x2(cov00, cov01, cov11, L)) { logger.errorLine("Cholesky failed"); return -1; }
-    logger.infoLine("Cholesky L: ", L[0], ", ", L[2], ", ", L[3]);
+    // Dynamic Covariance and Cholesky 
+    std::vector<float> covMatrix = calculateCovarianceMatrix(allReturns);
+    logger.infoLine("Cov matrix: ", covMatrix);
 
-    // CPU sampling (reproducible if seed provided)
-    float mu[2] = { meanA, meanB };
-    constexpr size_t Ncpu = 20000;
-    std::vector<std::array<float,2>> samples;
-    logger.infoLine("Generating CPU samples (N=", Ncpu, ") seed=", seed);
+    std::vector<float> L;
+    if (!choleskyDecomp(numAssets, covMatrix, L)) { logger.errorLine("Cholesky failed"); return -1; }
+    logger.infoLine("Cholesky L: ", L);
+
+    // ---------------------------------------------------------
+    // CPU STOPWATCH START
+    // It now covers not just random number generation, but also 
+    // matrix multiplication, portfolio P/L calculation, and Sort/VaR search.
+    // ---------------------------------------------------------
+    logger.infoLine("Generating CPU calculations (N=", 20000, ") seed=", seed);
     auto t0 = std::chrono::high_resolution_clock::now();
-    generateCorrelatedSamplesCPU(Ncpu, mu, L, samples, seed);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t1 - t0).count();
-    logger.infoLine("CPU generation time (ms): ", cpuMs);
 
-    // CPU portfolio P/L vector
-    std::vector<float> cpuPL;
-    cpuPL.reserve(samples.size());
-    for (const auto &s : samples) cpuPL.push_back(w0 * s[0] + w1 * s[1]);
+    size_t Ncpu = 20000;
+    std::vector<float> samples;
+    generateCorrelatedSamplesCPU(Ncpu, numAssets, mu, L, samples, seed);
+
+    std::vector<float> cpuPL(Ncpu, 0.0f);
+    for (size_t i = 0; i < Ncpu; ++i) {
+        float pl = 0.0f;
+        for (int j = 0; j < numAssets; ++j) {
+            pl += weights[j] * samples[i * numAssets + j];
+        }
+        cpuPL[i] = pl;
+    }
 
     float cpuVaR = calculateVaR(cpuPL, static_cast<float>(alpha));
     float cpuCVaR = calculateCVaR(cpuPL, static_cast<float>(alpha));
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t1 - t0).count();
+    // ---------------------------------------------------------
+
+    logger.infoLine("CPU full calculation time (ms): ", cpuMs);
     logger.infoLine("CPU VaR=", cpuVaR, " CVaR=", cpuCVaR);
 
-    // GPU Monte Carlo VaR
+    // GPU Monte Carlo VaR Call
+    // (Since your current GPU Kernel is not yet N-Dimensional, we send data as raw pointers for compatibility)
     logger.infoLine("Launching GPU Monte Carlo VaR: Ngpu=", Ngpu);
     float gpuVaR = 0.0f, gpuCVaR = 0.0f, gpuMs = 0.0f;
-    float weights[2] = { w0, w1 };
-    bool ok = simulateReturnsGPU(Ngpu, mu, L, weights, seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &gpuMs);
+
+    bool ok = simulateReturnsGPU(Ngpu, numAssets, mu.data(), L.data(), weights.data(), seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &gpuMs);
+
     if (!ok) {
         logger.errorLine("GPU simulation failed");
-    } else {
+    }
+    else {
         logger.infoLine("GPU kernel+select time (ms) = ", gpuMs);
         logger.infoLine("GPU VaR=", gpuVaR, " GPU CVaR=", gpuCVaR);
     }
 
-    // Compare CPU vs GPU (relative diff)
+    // Comparison CPU vs GPU
     if (ok) {
         auto rel = [](double a, double b)->double {
             if (b == 0.0) return std::abs(a - b);
             return std::abs((a - b) / b);
-        };
+            };
         logger.infoLine("Comparison CPU vs GPU: VaR rel diff=", rel(cpuVaR, gpuVaR), " CVaR rel diff=", rel(cpuCVaR, gpuCVaR));
     }
 
