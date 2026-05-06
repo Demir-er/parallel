@@ -472,3 +472,83 @@ Summary:
 2026-05-06 22:38:12 INFO: Summary: aligned rows=503 CPU ms=24.7381 GPU ms=154.547
 ----- End run -----
 
+----- Run at 2026-05-06 22:50:04 -----
+2026-05-06 22:50:04 INFO: CLI: Ngpu=2000000 alpha=0.95 seed=0 weights=[1,1]
+2026-05-06 22:50:04 INFO: Read rows: Aselsan=503 THY=503
+2026-05-06 22:50:04 INFO: Aligned rows: 503
+2026-05-06 22:50:04 INFO: Cov matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:50:04 INFO: Cholesky L: [0.030897, 0, -0.00136844, 0.00176469]
+2026-05-06 22:50:04 INFO: Generating CPU calculations (N=20000) seed=0
+2026-05-06 22:50:06 INFO: 
+======================================================
+2026-05-06 22:50:06 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-06 22:50:06 INFO: ======================================================
+2026-05-06 22:50:06 INFO: 1. SIMULATION PARAMETERS
+2026-05-06 22:50:06 INFO:    - Portfolio Assets : 2
+2026-05-06 22:50:06 INFO:    - Historical Days  : 503
+2026-05-06 22:50:06 INFO:    - CPU Workload     : 20000 paths
+2026-05-06 22:50:06 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-06 22:50:06 INFO:    - Confidence Level : 95%
+2026-05-06 22:50:06 INFO: ------------------------------------------------------
+2026-05-06 22:50:06 INFO: 2. RISK METRICS (VaR & CVaR)
+2026-05-06 22:50:06 INFO:    [CPU] VaR: 0.0449827  |  CVaR: 0.0570447
+2026-05-06 22:50:06 INFO:    [GPU] VaR: 0.0448872  |  CVaR: 0.057209
+2026-05-06 22:50:06 INFO:    [Diff ] VaR: 0.212676%  |  CVaR: 0.287161%
+2026-05-06 22:50:06 INFO:    -> Result: GPU accuracy is exceptionally high!
+2026-05-06 22:50:06 INFO: ------------------------------------------------------
+2026-05-06 22:50:06 INFO: 3. PERFORMANCE & ACCELERATION
+2026-05-06 22:50:06 INFO:    [CPU] Measured Time (20000) : 33.1628 ms
+2026-05-06 22:50:06 INFO:    [GPU] Measured Time (2000000) : 159.522 ms
+2026-05-06 22:50:06 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3316.28 ms
+2026-05-06 22:50:06 INFO:    [WIN  ] GPU is 20.7889 TIMES FASTER than CPU!
+2026-05-06 22:50:06 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-06 22:58:16 -----
+2026-05-06 22:58:16 INFO: 
+======================================================
+2026-05-06 22:58:16 INFO:          INITIALIZING MONTE CARLO VaR ENGINE          
+2026-05-06 22:58:16 INFO: ======================================================
+2026-05-06 22:58:16 INFO: [+] Configuration Settings
+2026-05-06 22:58:16 INFO:     - GPU Target Paths : 2000000
+2026-05-06 22:58:16 INFO:     - Confidence Level : 95%
+2026-05-06 22:58:16 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-06 22:58:16 INFO:     - Asset Weights    : [1, 1]
+
+2026-05-06 22:58:16 INFO: [+] Data Processing (Historical CSVs)
+2026-05-06 22:58:16 INFO:     - Raw Rows Read    : Aselsan = 503 | THY = 503
+2026-05-06 22:58:16 INFO:     - Aligned Dates    : 503 valid trading days matched
+
+2026-05-06 22:58:16 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-06 22:58:16 INFO:     - Covariance Matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-06 22:58:16 INFO:     - Cholesky (L)     : [0.030897, 0, -0.00136844, 0.00176469]
+
+2026-05-06 22:58:16 INFO: [+] Hardware Execution Phase
+2026-05-06 22:58:16 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-06 22:58:18 INFO: 
+======================================================
+2026-05-06 22:58:18 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-06 22:58:18 INFO: ======================================================
+2026-05-06 22:58:18 INFO: 1. SIMULATION PARAMETERS
+2026-05-06 22:58:18 INFO:    - Portfolio Assets : 2
+2026-05-06 22:58:18 INFO:    - Historical Days  : 503
+2026-05-06 22:58:18 INFO:    - CPU Workload     : 20000 paths
+2026-05-06 22:58:18 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-06 22:58:18 INFO:    - Confidence Level : 95%
+2026-05-06 22:58:18 INFO: ------------------------------------------------------
+2026-05-06 22:58:18 INFO: 2. RISK METRICS (VaR & CVaR)
+2026-05-06 22:58:18 INFO:    [CPU] VaR: 0.0454082  |  CVaR: 0.0580934
+2026-05-06 22:58:18 INFO:    [GPU] VaR: 0.0448872  |  CVaR: 0.057209
+2026-05-06 22:58:18 INFO:    [Diff ] VaR: 1.16069%  |  CVaR: 1.54601%
+2026-05-06 22:58:18 INFO:    -> Result: GPU accuracy is exceptionally high!
+2026-05-06 22:58:18 INFO: ------------------------------------------------------
+2026-05-06 22:58:18 INFO: 3. PERFORMANCE & ACCELERATION
+2026-05-06 22:58:18 INFO:    [CPU] Measured Time (20000) : 30.3093 ms
+2026-05-06 22:58:18 INFO:    [GPU] Measured Time (2000000) : 156.92 ms
+2026-05-06 22:58:18 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3030.93 ms
+2026-05-06 22:58:18 INFO:    [WIN  ] GPU is 19.3151 TIMES FASTER than CPU!
+2026-05-06 22:58:18 INFO: ======================================================
+
+----- End run -----
+
