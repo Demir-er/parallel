@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calculate_cpu.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="simulate_gpu.h" />
   </ItemGroup>
   <ItemGroup>

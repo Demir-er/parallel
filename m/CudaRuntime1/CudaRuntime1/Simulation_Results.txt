@@ -1,0 +1,162 @@
+
+----- Run at 2026-05-07 22:52:09 -----
+2026-05-07 22:52:09 INFO: 
+======================================================
+2026-05-07 22:52:09 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 22:52:09 INFO: ======================================================
+2026-05-07 22:52:09 INFO: [+] Configuration Settings
+2026-05-07 22:52:09 INFO:     - GPU Target Paths : 2000000
+2026-05-07 22:52:09 INFO:     - Confidence Level : 95%
+2026-05-07 22:52:09 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 22:52:09 INFO:     - Asset Portfolio  : 4 total assets
+
+2026-05-07 22:52:09 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 22:52:09 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 22:52:09 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 22:52:09 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 22:52:09 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 22:52:09 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 22:52:09 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 22:52:09 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 22:52:09 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 22:52:09 INFO: [+] Hardware Execution Phase
+2026-05-07 22:52:09 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 22:52:09 INFO:     -> Launching Dynamic Portfolio Optimizer (10,000 combinations) ...
+2026-05-07 22:52:15 INFO: 
+======================================================
+2026-05-07 22:52:15 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 22:52:15 INFO: ======================================================
+2026-05-07 22:52:15 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 22:52:15 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 22:52:15 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 22:52:15 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 22:52:15 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 22:52:15 INFO:    - Confidence Level : 95%
+2026-05-07 22:52:15 INFO: ------------------------------------------------------
+2026-05-07 22:52:15 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 22:52:15 INFO:    [CPU] VaR: 0.0137366  |  CVaR: 0.0172486
+2026-05-07 22:52:15 INFO:    [GPU] VaR: 0.0135661  |  CVaR: 0.0172797
+2026-05-07 22:52:15 INFO:    [Diff ] VaR: 1.25717%  |  CVaR: 0.179736%
+2026-05-07 22:52:15 INFO: ------------------------------------------------------
+2026-05-07 22:52:15 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 22:52:15 INFO:    [MEAN ] Expected Average Return : 0.103456 %
+2026-05-07 22:52:15 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 22:52:15 INFO:    [PEAK ] Optimistic Peak Gain    : 1.56432 % (Best 5% of scenarios)
+2026-05-07 22:52:15 INFO: ------------------------------------------------------
+2026-05-07 22:52:15 INFO: 4. CURRENT HARDWARE PERFORMANCE
+2026-05-07 22:52:15 INFO:    [CPU] Measured Time (20000) : 3.7364 ms
+2026-05-07 22:52:15 INFO:    [GPU] Measured Time (2000000) : 5.19568 ms
+2026-05-07 22:52:15 INFO:    [Proj ] Projected CPU Time for 2000000 : ~373.64 ms
+2026-05-07 22:52:15 INFO: ------------------------------------------------------
+2026-05-07 22:52:15 INFO: 5. EVOLUTION OF OPTIMIZATIONS (For 2M Paths)
+2026-05-07 22:52:15 INFO:    [Stage 1] Baseline CPU (Single-Thread)     : ~3182.99 ms
+2026-05-07 22:52:15 INFO:    [Stage 2] Baseline GPU (No Optimizations)  :  248.49 ms
+2026-05-07 22:52:15 INFO:    [Stage 3] Advanced GPU (Release+FastMath)  :  5.19568 ms
+
+2026-05-07 22:52:15 INFO:    >> STEP-BY-STEP IMPROVEMENTS:
+2026-05-07 22:52:15 INFO:       1. Hardware Shift (Stage 1 -> 2) : GPU reduced time by 12.8093x
+2026-05-07 22:52:15 INFO:       2. Software Tuning (Stage 2 -> 3): FastMath & Unrolling improved GPU by 47.8263x
+2026-05-07 22:52:15 INFO:       ==================================================
+2026-05-07 22:52:15 INFO:       => TOTAL SPEEDUP (Stage 1 to 3)  : System is now 612.622x FASTER!
+2026-05-07 22:52:15 INFO: ======================================================
+
+2026-05-07 22:52:15 INFO: 6. DYNAMIC PORTFOLIO OPTIMIZATION (Mean-CVaR Strategy)
+2026-05-07 22:52:15 INFO:    [TIME ] Optimizer ran in : 5112.51 ms (Tested 10,000 allocations)
+2026-05-07 22:52:15 INFO:    ---------------------------------------------------
+2026-05-07 22:52:15 INFO:    >> BASELINE (Equal-Weight) -> Return: 0.103435% | CVaR: 0.0172486 | Score: 0.0599672
+2026-05-07 22:52:15 INFO:    >> OPTIMIZED PORTFOLIO     -> Return: 0.0248209% | CVaR: 0.000932339 | Score: 0.266222
+2026-05-07 22:52:15 INFO:    ---------------------------------------------------
+2026-05-07 22:52:15 INFO:    [WIN  ] Risk-Adjusted Efficiency Improved by : +343.946 %
+
+2026-05-07 22:52:15 INFO:    >> OPTIMAL ASSET ALLOCATION:
+2026-05-07 22:52:15 INFO:       - aselsan.csv : % 9.0139
+2026-05-07 22:52:15 INFO:       - thy.csv : % 70.8263
+2026-05-07 22:52:15 INFO:       - tuprs.csv : % 1.4828
+2026-05-07 22:52:15 INFO:       - pgsus.csv : % 18.677
+2026-05-07 22:52:15 INFO: ======================================================
+
+----- End run -----
+
+
+----- Run at 2026-05-07 22:53:17 -----
+2026-05-07 22:53:17 INFO: 
+======================================================
+2026-05-07 22:53:17 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 22:53:17 INFO: ======================================================
+2026-05-07 22:53:17 INFO: [+] Configuration Settings
+2026-05-07 22:53:17 INFO:     - GPU Target Paths : 2000000
+2026-05-07 22:53:17 INFO:     - Confidence Level : 95%
+2026-05-07 22:53:17 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 22:53:17 INFO:     - Asset Portfolio  : 4 total assets
+
+2026-05-07 22:53:17 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 22:53:17 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 22:53:17 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 22:53:17 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 22:53:17 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 22:53:17 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 22:53:17 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 22:53:17 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 22:53:17 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 22:53:17 INFO: [+] Hardware Execution Phase
+2026-05-07 22:53:17 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 22:53:17 INFO:     -> Launching Dynamic Portfolio Optimizer (10,000 combinations) ...
+2026-05-07 22:53:23 INFO: 
+======================================================
+2026-05-07 22:53:23 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 22:53:23 INFO: ======================================================
+2026-05-07 22:53:23 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 22:53:23 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 22:53:23 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 22:53:23 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 22:53:23 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 22:53:23 INFO:    - Confidence Level : 95%
+2026-05-07 22:53:23 INFO: ------------------------------------------------------
+2026-05-07 22:53:23 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 22:53:23 INFO:    [CPU] VaR: 0.0134847  |  CVaR: 0.01714
+2026-05-07 22:53:23 INFO:    [GPU] VaR: 0.0135661  |  CVaR: 0.0172797
+2026-05-07 22:53:23 INFO:    [Diff ] VaR: 0.599747%  |  CVaR: 0.808531%
+2026-05-07 22:53:23 INFO: ------------------------------------------------------
+2026-05-07 22:53:23 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 22:53:23 INFO:    [MEAN ] Expected Average Return : 0.103456 %
+2026-05-07 22:53:23 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 22:53:23 INFO:    [PEAK ] Optimistic Peak Gain    : 1.56432 % (Best 5% of scenarios)
+2026-05-07 22:53:23 INFO: ------------------------------------------------------
+2026-05-07 22:53:23 INFO: 4. CURRENT HARDWARE PERFORMANCE
+2026-05-07 22:53:23 INFO:    [CPU] Measured Time (20000) : 4.3898 ms
+2026-05-07 22:53:23 INFO:    [GPU] Measured Time (2000000) : 4.73987 ms
+2026-05-07 22:53:23 INFO:    [Proj ] Projected CPU Time for 2000000 : ~438.98 ms
+2026-05-07 22:53:23 INFO: ------------------------------------------------------
+2026-05-07 22:53:23 INFO: 5. EVOLUTION OF OPTIMIZATIONS (For 2M Paths)
+2026-05-07 22:53:23 INFO:    [Stage 1] Baseline CPU (Single-Thread)     : ~3182.99 ms
+2026-05-07 22:53:23 INFO:    [Stage 2] Baseline GPU (No Optimizations)  :  248.49 ms
+2026-05-07 22:53:23 INFO:    [Stage 3] Advanced GPU (Release+FastMath)  :  4.73987 ms
+
+2026-05-07 22:53:23 INFO:    >> STEP-BY-STEP IMPROVEMENTS:
+2026-05-07 22:53:23 INFO:       1. Hardware Shift (Stage 1 -> 2) : GPU reduced time by 12.8093x
+2026-05-07 22:53:23 INFO:       2. Software Tuning (Stage 2 -> 3): FastMath & Unrolling improved GPU by 52.4255x
+2026-05-07 22:53:23 INFO:       ==================================================
+2026-05-07 22:53:23 INFO:       => TOTAL SPEEDUP (Stage 1 to 3)  : System is now 671.535x FASTER!
+2026-05-07 22:53:23 INFO: ======================================================
+
+2026-05-07 22:53:23 INFO: 6. DYNAMIC PORTFOLIO OPTIMIZATION (Mean-CVaR Strategy)
+2026-05-07 22:53:23 INFO:    [TIME ] Optimizer ran in : 4810.98 ms (Tested 10,000 allocations)
+2026-05-07 22:53:23 INFO:    ---------------------------------------------------
+2026-05-07 22:53:23 INFO:    >> BASELINE (Equal-Weight) -> Return: 0.103435% | CVaR: 0.01714 | Score: 0.0603474
+2026-05-07 22:53:23 INFO:    >> OPTIMIZED PORTFOLIO     -> Return: 0.0248209% | CVaR: 0.00093255 | Score: 0.266162
+2026-05-07 22:53:23 INFO:    ---------------------------------------------------
+2026-05-07 22:53:23 INFO:    [WIN  ] Risk-Adjusted Efficiency Improved by : +341.05 %
+
+2026-05-07 22:53:23 INFO:    >> OPTIMAL ASSET ALLOCATION:
+2026-05-07 22:53:23 INFO:       - aselsan.csv : % 9.0139
+2026-05-07 22:53:23 INFO:       - thy.csv : % 70.8263
+2026-05-07 22:53:23 INFO:       - tuprs.csv : % 1.4828
+2026-05-07 22:53:23 INFO:       - pgsus.csv : % 18.677
+2026-05-07 22:53:23 INFO: ======================================================
+
+----- End run -----
+
