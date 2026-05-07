@@ -376,8 +376,8 @@ int main(int argc, char** argv) {
     // Read CSV files
     std::vector<CsvRow> rowsA, rowsB;
     bool aHasAdj = false, bHasAdj = false;
-    if (!readCsvFull("aselsan2year.csv", rowsA, aHasAdj)) {
-        logger.errorLine("Failed to read aselsan2year.csv"); return -1;
+    if (!readCsvFull("aselsan.csv", rowsA, aHasAdj)) {
+        logger.errorLine("Failed to read aselsan.csv"); return -1;
     }
     if (!readCsvFull("thy.csv", rowsB, bHasAdj)) {
         logger.errorLine("Failed to read thy.csv"); return -1;
