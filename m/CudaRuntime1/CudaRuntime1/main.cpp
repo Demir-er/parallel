@@ -15,11 +15,8 @@
 
 #include <cuda_runtime.h>
 
-#include "simulate_cpu.h"
 #include "simulate_gpu.h"
 #include "calculate_cpu.h"
-#include "calculate_gpu.h"
-#include "output.h"
 
 // -----------------------------
 // Operator overload to print std::vector

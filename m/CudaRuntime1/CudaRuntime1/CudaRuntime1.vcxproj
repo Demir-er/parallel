@@ -91,18 +91,12 @@
   <ItemGroup>
     <ClCompile Include="calculate_cpu.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="output.cpp" />
-    <ClCompile Include="simulate_cpu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calculate_cpu.h" />
-    <ClInclude Include="calculate_gpu.h" />
-    <ClInclude Include="output.h" />
-    <ClInclude Include="simulate_cpu.h" />
     <ClInclude Include="simulate_gpu.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="calculate_gpu.cu" />
     <CudaCompile Include="simulate_gpu.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
