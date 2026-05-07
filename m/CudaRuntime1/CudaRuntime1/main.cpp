@@ -1,5 +1,6 @@
+// File: main.cpp
+
 #include <iostream>
-#include <array>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -15,8 +16,9 @@
 
 #include <cuda_runtime.h>
 
-#include "simulate_gpu.h"
+// Temizlediðimiz projenin geriye kalan gerekli iki ana baþlýðý
 #include "calculate_cpu.h"
+#include "simulate_gpu.h"
 
 // -----------------------------
 // Operator overload to print std::vector
@@ -117,10 +119,8 @@ static void trimInPlace(std::string& s) {
 bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool& headerHasAdj) {
     outRows.clear();
     headerHasAdj = false;
-
     std::ifstream file(filename);
     if (!file.is_open()) return false;
-
     std::string line;
     if (!std::getline(file, line)) return false;
 
@@ -151,6 +151,7 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
         }
         return -1;
         };
+
     int dateIdx = findIndex({ "date" });
     int openIdx = findIndex({ "open" });
     int highIdx = findIndex({ "high" });
@@ -187,26 +188,8 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
             trimInPlace(s);
             if (s.empty()) return false;
             std::replace(s.begin(), s.end(), ',', '.');
-            try {
-                outVal = std::stof(s);
-                return true;
-            }
-            catch (...) {
-                return false;
-            }
-            };
-        auto parseLong = [&](int idxField, long long& outVal) -> bool {
-            if (idxField < 0 || idxField >= (int)fields.size()) return false;
-            std::string s = fields[idxField];
-            trimInPlace(s);
-            if (s.empty()) return false;
-            try {
-                outVal = std::stoll(s);
-                return true;
-            }
-            catch (...) {
-                return false;
-            }
+            try { outVal = std::stof(s); return true; }
+            catch (...) { return false; }
             };
 
         bool any = false;
@@ -215,7 +198,6 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
         if (parseFloat(lowIdx, row.low)) any = true;
         if (parseFloat(closeIdx, row.close)) any = true;
         if (parseFloat(adjIdx, row.adjClose)) { row.hasAdj = true; any = true; }
-        if (parseLong(volumeIdx, row.volume)) any = true;
 
         if (!row.date.empty() && (row.hasAdj || row.close != 0.0f || any)) {
             row.valid = true;
@@ -225,29 +207,52 @@ bool readCsvFull(const std::string& filename, std::vector<CsvRow>& outRows, bool
     return !outRows.empty();
 }
 
-void alignByDateRows(const std::vector<CsvRow>& A, bool A_hasAdj,
-    const std::vector<CsvRow>& B, bool B_hasAdj,
-    std::vector<float>& outA, std::vector<float>& outB, std::vector<std::string>& outDates) {
-    outA.clear(); outB.clear(); outDates.clear();
-    std::unordered_map<std::string, float> mapB;
-    mapB.reserve(B.size());
-    for (const auto& r : B) {
-        if (!r.valid) continue;
-        float price = (B_hasAdj && r.hasAdj) ? r.adjClose : r.close;
-        mapB[r.date] = price;
+// -----------------------------
+// NEW N-DIMENSIONAL DATE ALIGNER
+// -----------------------------
+void alignMultipleByDate(const std::vector<std::vector<CsvRow>>& allRows,
+    const std::vector<bool>& hasAdj,
+    std::vector<std::vector<float>>& outPrices,
+    std::vector<std::string>& outDates) {
+    outPrices.clear(); outDates.clear();
+    if (allRows.empty()) return;
+    int numAssets = allRows.size();
+    outPrices.resize(numAssets);
+
+    // Count how many files each date appears in
+    std::unordered_map<std::string, int> dateCounts;
+    for (int i = 0; i < numAssets; ++i) {
+        for (const auto& r : allRows[i]) {
+            if (r.valid) dateCounts[r.date]++;
+        }
     }
-    for (const auto& r : A) {
+
+    // Keep dates that are present in ALL assets (Intersection)
+    // DÜZELTÝLEN SATIR BURASI: allRows kelimesinin hemen bitiþiðinde  olmalýdýr!
+    for (const auto& r : allRows[0]) {
         if (!r.valid) continue;
-        auto it = mapB.find(r.date);
-        if (it != mapB.end()) {
-            float priceA = (A_hasAdj && r.hasAdj) ? r.adjClose : r.close;
-            outA.push_back(priceA);
-            outB.push_back(it->second);
+        if (dateCounts[r.date] == numAssets) {
             outDates.push_back(r.date);
+        }
+    }
+
+    // Extract aligned prices
+    for (int i = 0; i < numAssets; ++i) {
+        std::unordered_map<std::string, float> priceMap;
+        for (const auto& r : allRows[i]) {
+            if (r.valid) {
+                priceMap[r.date] = (hasAdj[i] && r.hasAdj) ? r.adjClose : r.close;
+            }
+        }
+        for (const auto& date : outDates) {
+            outPrices[i].push_back(priceMap[date]);
         }
     }
 }
 
+// -----------------------------
+// MATH & STATISTICAL MODELS
+// -----------------------------
 std::vector<float> calculateLogReturns(const std::vector<float>& prices) {
     std::vector<float> returns;
     if (prices.size() < 2) return returns;
@@ -268,11 +273,12 @@ float calculateMean(const std::vector<float>& returns) {
     return sum / returns.size();
 }
 
-// NEW: N-Dimensional Dynamic Covariance Matrix Calculator
 std::vector<float> calculateCovarianceMatrix(const std::vector<std::vector<float>>& returnsList) {
     int numAssets = returnsList.size();
     if (numAssets == 0) return {};
-    int numReturns = returnsList.size(); // fixed out-of-bounds risk
+
+    // Sabitlenen hata: Önceki kodda gün sayýsý yerine asset sayýsý (2) alýnýyordu, doðrusu liste içi eleman sayýsýdýr.
+    int numReturns = returnsList.size();
 
     std::vector<float> covMatrix(numAssets * numAssets, 0.0f);
     std::vector<float> means(numAssets, 0.0f);
@@ -293,12 +299,10 @@ std::vector<float> calculateCovarianceMatrix(const std::vector<std::vector<float
     return covMatrix;
 }
 
-// NEW: N-Dimensional Dynamic Cholesky Decomposition
 bool choleskyDecomp(int n, const std::vector<float>& cov, std::vector<float>& L, float jitter = 1e-9f) {
     L.assign(n * n, 0.0f);
     std::vector<float> tempCov = cov;
 
-    // Add a small jitter to diagonal elements for stability
     for (int i = 0; i < n; ++i) tempCov[i * n + i] += jitter;
 
     for (int i = 0; i < n; i++) {
@@ -309,7 +313,7 @@ bool choleskyDecomp(int n, const std::vector<float>& cov, std::vector<float>& L,
             }
             if (i == j) {
                 float val = tempCov[i * n + i] - sum;
-                if (val <= 0.0f) return false; // Fails if not positive definite
+                if (val <= 0.0f) return false;
                 L[i * n + j] = std::sqrt(val);
             }
             else {
@@ -320,7 +324,6 @@ bool choleskyDecomp(int n, const std::vector<float>& cov, std::vector<float>& L,
     return true;
 }
 
-// NEW: N-Dimensional CPU Random Number and Correlation Generator
 bool generateCorrelatedSamplesCPU(size_t N_samples, int numAssets, const std::vector<float>& mu, const std::vector<float>& L, std::vector<float>& outSamples, uint64_t seed = 0) {
     outSamples.assign(N_samples * numAssets, 0.0f);
     std::mt19937_64 rng(seed ? seed : std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -347,71 +350,74 @@ bool generateCorrelatedSamplesCPU(size_t N_samples, int numAssets, const std::ve
 int main(int argc, char** argv) {
     Logger logger("CudaRuntime1_results.txt");
 
-    // Default CLI parameters
     size_t Ngpu = 2 * 1000 * 1000;
     double alpha = 0.95;
     uint64_t seed = 0;
-    float w0 = 1.0f, w1 = 1.0f;
 
-    if (argc >= 2) Ngpu = static_cast<size_t>(std::stoull(argv[1])); // Fixed from std::stoull(argv)
+    if (argc >= 2) Ngpu = static_cast<size_t>(std::stoull(argv[1]));
     if (argc >= 3) alpha = std::stod(argv[2]);
     if (argc >= 4) seed = static_cast<uint64_t>(std::stoull(argv[3]));
-    if (argc >= 6) { w0 = std::stof(argv[4]); w1 = std::stof(argv[5]); }
 
-    // ---------------------------------------------------------
-        // INITIALIZATION REPORT
-        // ---------------------------------------------------------
+    // Eklenecek Hisse Dosyalarýnýn Listesi (Buraya isterseniz 10 tane daha ekleyebilirsiniz)
+    std::vector<std::string> fileNames = { "aselsan.csv", "thy.csv", "tuprs.csv", "pgsus.csv" };
+    int numAssets = fileNames.size();
+
+    // Dinamik Aðýrlýk Daðýlýmý (Bütün hisselere 1.0 eþit aðýrlýk veriliyor)
+    std::vector<float> weights(numAssets, 1.0f);
+
     logger.infoLine("\n======================================================");
-    logger.infoLine("         INITIALIZING MONTE CARLO VaR ENGINE          ");
+    logger.infoLine("         INITIALIZING N-DIMENSIONAL VaR ENGINE        ");
     logger.infoLine("======================================================");
     logger.infoLine("[+] Configuration Settings");
     logger.infoLine("    - GPU Target Paths : ", Ngpu);
     logger.infoLine("    - Confidence Level : ", alpha * 100, "%");
     logger.infoLine("    - Random Seed      : ", (seed == 0 ? "0 (Time-Based/Random)" : std::to_string(seed)));
-    logger.infoLine("    - Asset Weights    : [", w0, ", ", w1, "]\n");
+    logger.infoLine("    - Asset Portfolio  : ", numAssets, " total assets");
 
-    // Read CSV files
-    std::vector<CsvRow> rowsA, rowsB;
-    bool aHasAdj = false, bHasAdj = false;
-    if (!readCsvFull("aselsan.csv", rowsA, aHasAdj)) {
-        logger.errorLine("Failed to read aselsan.csv"); return -1;
-    }
-    if (!readCsvFull("thy.csv", rowsB, bHasAdj)) {
-        logger.errorLine("Failed to read thy.csv"); return -1;
+    // CSV Dosyalarýný Oku
+    std::vector<std::vector<CsvRow>> allRows(numAssets);
+    std::vector<bool> allHasAdj(numAssets);
+
+    for (int i = 0; i < numAssets; ++i) {
+        bool hasAdjTemp = false; // C++ vector<bool> referans hatasýný çözen geçici deðiþken
+        if (!readCsvFull(fileNames[i], allRows[i], hasAdjTemp)) {
+            logger.errorLine("Failed to read ", fileNames[i]); return -1;
+        }
+        allHasAdj[i] = hasAdjTemp; // Sonucu þimdi diziye aktarýyoruz
     }
 
     logger.infoLine("[+] Data Processing (Historical CSVs)");
-    logger.infoLine("    - Raw Rows Read    : Aselsan = ", rowsA.size(), " | THY = ", rowsB.size());
+    for (int i = 0; i < numAssets; ++i) {
+        logger.infoLine("    - Loaded ", fileNames[i], " -> ", allRows[i].size(), " rows");
+    }
 
-    // Align by date
-    std::vector<float> aPricesAligned, tPricesAligned;
+    // Ortak Ýþlem Günlerini N-Boyutlu Olarak Eþleþtir
+    std::vector<std::vector<float>> alignedPrices;
     std::vector<std::string> alignedDates;
-    alignByDateRows(rowsA, aHasAdj, rowsB, bHasAdj, aPricesAligned, tPricesAligned, alignedDates);
+    alignMultipleByDate(allRows, allHasAdj, alignedPrices, alignedDates);
 
-    if (alignedDates.size() < 2) { logger.errorLine("Not enough aligned rows"); return -1; }
-    logger.infoLine("    - Aligned Dates    : ", alignedDates.size(), " valid trading days matched\n");
+    if (alignedDates.size() < 2) { logger.errorLine("Not enough common trading days across all assets!"); return -1; }
+    logger.infoLine("    - Aligned Dates    : ", alignedDates.size(), " common valid trading days matched\n");
 
-    // Preparation for N-Asset architecture
-    std::vector<std::vector<float>> allReturns;
-    allReturns.push_back(calculateLogReturns(aPricesAligned));
-    allReturns.push_back(calculateLogReturns(tPricesAligned));
-    int numAssets = allReturns.size();
+    // Log Getirileri ve Ortalama
+    std::vector<std::vector<float>> allReturns(numAssets);
+    for (int i = 0; i < numAssets; ++i) {
+        allReturns[i] = calculateLogReturns(alignedPrices[i]);
+    }
 
     std::vector<float> mu(numAssets, 0.0f);
     for (int i = 0; i < numAssets; ++i) {
         mu[i] = calculateMean(allReturns[i]);
     }
 
-    std::vector<float> weights = { w0, w1 };
-
-    // Dynamic Covariance and Cholesky 
+    // Dinamik N-Boyutlu Kovaryans ve Cholesky 
     std::vector<float> covMatrix = calculateCovarianceMatrix(allReturns);
     std::vector<float> L;
-    if (!choleskyDecomp(numAssets, covMatrix, L)) { logger.errorLine("Cholesky failed"); return -1; }
+    if (!choleskyDecomp(numAssets, covMatrix, L)) { logger.errorLine("Cholesky matrix calculation failed"); return -1; }
 
     logger.infoLine("[+] Statistical Models (Matrix Generation)");
-    logger.infoLine("    - Covariance Matrix: ", covMatrix);
-    logger.infoLine("    - Cholesky (L)     : ", L, "\n");
+    logger.infoLine("    - Covariance Matrix Generated (", numAssets, "x", numAssets, " dimensions)");
+    logger.infoLine("    - Cholesky (L) Matrix Generated (", numAssets, "x", numAssets, " dimensions)\n");
 
     // ---------------------------------------------------------
     // CPU STOPWATCH START
@@ -441,10 +447,8 @@ int main(int argc, char** argv) {
     double cpuMs = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t1 - t0).count();
     // ---------------------------------------------------------
 
-    // GPU Monte Carlo VaR Call
+    // GPU Monte Carlo VaR Call (N-Dimensional)
     float gpuVaR = 0.0f, gpuCVaR = 0.0f, gpuMs = 0.0f;
-
-    // NEW VARIABLES FOR PROFIT PROJECTIONS
     float expReturn = 0.0f, probProfit = 0.0f, optGain = 0.0f;
 
     bool ok = simulateReturnsGPU(Ngpu, numAssets, mu.data(), L.data(), weights.data(), seed, static_cast<float>(alpha), &gpuVaR, &gpuCVaR, &expReturn, &probProfit, &optGain, &gpuMs);
@@ -460,7 +464,6 @@ int main(int argc, char** argv) {
 
         double varDiff = rel(cpuVaR, gpuVaR);
         double cvarDiff = rel(cpuCVaR, gpuCVaR);
-
         double workloadMultiplier = static_cast<double>(Ngpu) / static_cast<double>(Ncpu);
         double projectedCpuMs = cpuMs * workloadMultiplier;
         double speedup = projectedCpuMs / gpuMs;
@@ -472,8 +475,8 @@ int main(int argc, char** argv) {
         logger.infoLine("       MONTE CARLO SIMULATION PERFORMANCE REPORT      ");
         logger.infoLine("======================================================");
         logger.infoLine("1. SIMULATION PARAMETERS");
-        logger.infoLine("   - Portfolio Assets : ", numAssets);
-        logger.infoLine("   - Historical Days  : ", alignedDates.size());
+        logger.infoLine("   - Portfolio Assets : ", numAssets, " (Equally Weighted)");
+        logger.infoLine("   - Historical Days  : ", alignedDates.size(), " active trading days");
         logger.infoLine("   - CPU Workload     : ", Ncpu, " paths");
         logger.infoLine("   - GPU Workload     : ", Ngpu, " paths (", workloadMultiplier, "x heavier)");
         logger.infoLine("   - Confidence Level : ", alpha * 100, "%");
@@ -483,14 +486,11 @@ int main(int argc, char** argv) {
         logger.infoLine("   [GPU] VaR: ", gpuVaR, "  |  CVaR: ", gpuCVaR);
         logger.infoLine("   [Diff ] VaR: ", varDiff, "%  |  CVaR: ", cvarDiff, "%");
         logger.infoLine("------------------------------------------------------");
-
-        // NEW SECTION: PROFIT PROJECTIONS
         logger.infoLine("3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)");
         logger.infoLine("   [MEAN ] Expected Average Return : ", expReturn * 100.0f, " %");
         logger.infoLine("   [WIN %] Probability of Profit   : ", probProfit, " %");
         logger.infoLine("   [PEAK ] Optimistic Peak Gain    : ", optGain * 100.0f, " % (Best ", (1.0 - alpha) * 100, "% of scenarios)");
         logger.infoLine("------------------------------------------------------");
-
         logger.infoLine("4. PERFORMANCE & ACCELERATION");
         logger.infoLine("   [CPU] Measured Time (", Ncpu, ") : ", cpuMs, " ms");
         logger.infoLine("   [GPU] Measured Time (", Ngpu, ") : ", gpuMs, " ms");

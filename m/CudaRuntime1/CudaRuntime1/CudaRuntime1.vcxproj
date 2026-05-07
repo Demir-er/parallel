@@ -61,6 +61,7 @@
       <AdditionalCompilerOptions>/Zc:preprocessor</AdditionalCompilerOptions>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
       <Include>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\include\cccl</Include>
+      <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -86,6 +87,7 @@
       <AdditionalCompilerOptions>/Zc:preprocessor</AdditionalCompilerOptions>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
       <Include>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\include\cccl</Include>
+      <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

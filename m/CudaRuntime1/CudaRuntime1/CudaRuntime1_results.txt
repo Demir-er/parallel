@@ -756,3 +756,372 @@ Summary:
 
 ----- End run -----
 
+----- Run at 2026-05-07 20:40:44 -----
+2026-05-07 20:40:44 INFO: 
+======================================================
+2026-05-07 20:40:44 INFO:          INITIALIZING MONTE CARLO VaR ENGINE          
+2026-05-07 20:40:44 INFO: ======================================================
+2026-05-07 20:40:44 INFO: [+] Configuration Settings
+2026-05-07 20:40:44 INFO:     - GPU Target Paths : 2000000
+2026-05-07 20:40:44 INFO:     - Confidence Level : 95%
+2026-05-07 20:40:44 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 20:40:44 INFO:     - Asset Weights    : [1, 1]
+
+2026-05-07 20:40:44 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 20:40:44 INFO:     - Raw Rows Read    : Aselsan = 503 | THY = 503
+2026-05-07 20:40:44 INFO:     - Aligned Dates    : 503 valid trading days matched
+
+2026-05-07 20:40:44 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 20:40:44 INFO:     - Covariance Matrix: [0.000954625, -4.22806e-05, -4.22806e-05, 4.98574e-06]
+2026-05-07 20:40:44 INFO:     - Cholesky (L)     : [0.030897, 0, -0.00136844, 0.00176469]
+
+2026-05-07 20:40:44 INFO: [+] Hardware Execution Phase
+2026-05-07 20:40:44 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 20:40:45 INFO: 
+======================================================
+2026-05-07 20:40:45 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 20:40:45 INFO: ======================================================
+2026-05-07 20:40:45 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 20:40:45 INFO:    - Portfolio Assets : 2
+2026-05-07 20:40:45 INFO:    - Historical Days  : 503
+2026-05-07 20:40:45 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 20:40:45 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 20:40:45 INFO:    - Confidence Level : 95%
+2026-05-07 20:40:45 INFO: ------------------------------------------------------
+2026-05-07 20:40:45 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 20:40:45 INFO:    [CPU] VaR: 0.0445203  |  CVaR: 0.0574103
+2026-05-07 20:40:45 INFO:    [GPU] VaR: 0.0448872  |  CVaR: 0.057209
+2026-05-07 20:40:45 INFO:    [Diff ] VaR: 0.817465%  |  CVaR: 0.3519%
+2026-05-07 20:40:45 INFO: ------------------------------------------------------
+2026-05-07 20:40:45 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 20:40:45 INFO:    [MEAN ] Expected Average Return : 0.37692 %
+2026-05-07 20:40:45 INFO:    [WIN %] Probability of Profit   : 55.0797 %
+2026-05-07 20:40:45 INFO:    [PEAK ] Optimistic Peak Gain    : 5.23954 % (Best 5% of scenarios)
+2026-05-07 20:40:45 INFO: ------------------------------------------------------
+2026-05-07 20:40:45 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 20:40:45 INFO:    [CPU] Measured Time (20000) : 31.75 ms
+2026-05-07 20:40:45 INFO:    [GPU] Measured Time (2000000) : 240.49 ms
+2026-05-07 20:40:45 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3175 ms
+2026-05-07 20:40:45 INFO:    [WIN  ] GPU is 13.2022 TIMES FASTER than CPU!
+2026-05-07 20:40:45 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:24:41 -----
+2026-05-07 21:24:41 INFO: 
+======================================================
+2026-05-07 21:24:41 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:24:41 INFO: ======================================================
+2026-05-07 21:24:41 INFO: [+] Configuration Settings
+2026-05-07 21:24:41 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:24:41 INFO:     - Confidence Level : 95%
+2026-05-07 21:24:41 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:24:41 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:24:41 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:24:41 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:24:41 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:24:41 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:24:41 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:24:41 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:24:41 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:24:41 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:24:41 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:24:41 INFO: [+] Hardware Execution Phase
+2026-05-07 21:24:41 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:24:43 INFO: 
+======================================================
+2026-05-07 21:24:43 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:24:43 INFO: ======================================================
+2026-05-07 21:24:43 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:24:43 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:24:43 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:24:43 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:24:43 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:24:43 INFO:    - Confidence Level : 95%
+2026-05-07 21:24:43 INFO: ------------------------------------------------------
+2026-05-07 21:24:43 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:24:43 INFO:    [CPU] VaR: 0.0542018  |  CVaR: 0.0691001
+2026-05-07 21:24:43 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:24:43 INFO:    [Diff ] VaR: 0.115175%  |  CVaR: 0.0268838%
+2026-05-07 21:24:43 INFO: ------------------------------------------------------
+2026-05-07 21:24:43 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:24:43 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:24:43 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:24:43 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:24:43 INFO: ------------------------------------------------------
+2026-05-07 21:24:43 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:24:43 INFO:    [CPU] Measured Time (20000) : 37.4618 ms
+2026-05-07 21:24:43 INFO:    [GPU] Measured Time (2000000) : 209.162 ms
+2026-05-07 21:24:43 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3746.18 ms
+2026-05-07 21:24:43 INFO:    [WIN  ] GPU is 17.9104 TIMES FASTER than CPU!
+2026-05-07 21:24:43 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:27:10 -----
+2026-05-07 21:27:10 INFO: 
+======================================================
+2026-05-07 21:27:10 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:27:10 INFO: ======================================================
+2026-05-07 21:27:10 INFO: [+] Configuration Settings
+2026-05-07 21:27:10 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:27:10 INFO:     - Confidence Level : 95%
+2026-05-07 21:27:10 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:27:10 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:27:10 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:27:10 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:27:10 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:27:10 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:27:10 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:27:10 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:27:10 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:27:10 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:27:10 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:27:10 INFO: [+] Hardware Execution Phase
+2026-05-07 21:27:10 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:27:11 INFO: 
+======================================================
+2026-05-07 21:27:11 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:27:11 INFO: ======================================================
+2026-05-07 21:27:11 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:27:11 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:27:11 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:27:11 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:27:11 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:27:11 INFO:    - Confidence Level : 95%
+2026-05-07 21:27:11 INFO: ------------------------------------------------------
+2026-05-07 21:27:11 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:27:11 INFO:    [CPU] VaR: 0.0536872  |  CVaR: 0.0685359
+2026-05-07 21:27:11 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:27:11 INFO:    [Diff ] VaR: 1.06361%  |  CVaR: 0.843176%
+2026-05-07 21:27:11 INFO: ------------------------------------------------------
+2026-05-07 21:27:11 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:27:11 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:27:11 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:27:11 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:27:11 INFO: ------------------------------------------------------
+2026-05-07 21:27:11 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:27:11 INFO:    [CPU] Measured Time (20000) : 31.8299 ms
+2026-05-07 21:27:11 INFO:    [GPU] Measured Time (2000000) : 248.498 ms
+2026-05-07 21:27:11 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3182.99 ms
+2026-05-07 21:27:11 INFO:    [WIN  ] GPU is 12.8089 TIMES FASTER than CPU!
+2026-05-07 21:27:11 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:32:52 -----
+2026-05-07 21:32:52 INFO: 
+======================================================
+2026-05-07 21:32:52 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:32:52 INFO: ======================================================
+2026-05-07 21:32:52 INFO: [+] Configuration Settings
+2026-05-07 21:32:52 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:32:52 INFO:     - Confidence Level : 95%
+2026-05-07 21:32:52 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:32:52 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:32:52 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:32:52 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:32:52 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:32:52 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:32:52 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:32:52 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:32:52 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:32:52 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:32:52 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:32:52 INFO: [+] Hardware Execution Phase
+2026-05-07 21:32:52 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:32:54 INFO: 
+======================================================
+2026-05-07 21:32:54 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:32:54 INFO: ======================================================
+2026-05-07 21:32:54 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:32:54 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:32:54 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:32:54 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:32:54 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:32:54 INFO:    - Confidence Level : 95%
+2026-05-07 21:32:54 INFO: ------------------------------------------------------
+2026-05-07 21:32:54 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:32:54 INFO:    [CPU] VaR: 0.0533955  |  CVaR: 0.0684364
+2026-05-07 21:32:54 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:32:54 INFO:    [Diff ] VaR: 1.60122%  |  CVaR: 0.987135%
+2026-05-07 21:32:54 INFO: ------------------------------------------------------
+2026-05-07 21:32:54 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:32:54 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:32:54 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:32:54 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:32:54 INFO: ------------------------------------------------------
+2026-05-07 21:32:54 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:32:54 INFO:    [CPU] Measured Time (20000) : 37.0165 ms
+2026-05-07 21:32:54 INFO:    [GPU] Measured Time (2000000) : 274.237 ms
+2026-05-07 21:32:54 INFO:    [Proj ] Projected CPU Time for 2000000 : ~3701.65 ms
+2026-05-07 21:32:54 INFO:    [WIN  ] GPU is 13.498 TIMES FASTER than CPU!
+2026-05-07 21:32:54 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:33:00 -----
+2026-05-07 21:33:00 INFO: 
+======================================================
+2026-05-07 21:33:00 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:33:00 INFO: ======================================================
+2026-05-07 21:33:00 INFO: [+] Configuration Settings
+2026-05-07 21:33:00 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:33:00 INFO:     - Confidence Level : 95%
+2026-05-07 21:33:00 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:33:00 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:33:00 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:33:00 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:33:00 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:33:00 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:33:00 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:33:00 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:33:00 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:33:00 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:33:00 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:33:00 INFO: [+] Hardware Execution Phase
+2026-05-07 21:33:00 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:33:01 INFO: 
+======================================================
+2026-05-07 21:33:01 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:33:01 INFO: ======================================================
+2026-05-07 21:33:01 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:33:01 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:33:01 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:33:01 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:33:01 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:33:01 INFO:    - Confidence Level : 95%
+2026-05-07 21:33:01 INFO: ------------------------------------------------------
+2026-05-07 21:33:01 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:33:01 INFO:    [CPU] VaR: 0.0544096  |  CVaR: 0.0705537
+2026-05-07 21:33:01 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:33:01 INFO:    [Diff ] VaR: 0.267704%  |  CVaR: 2.07619%
+2026-05-07 21:33:01 INFO: ------------------------------------------------------
+2026-05-07 21:33:01 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:33:01 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:33:01 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:33:01 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:33:01 INFO: ------------------------------------------------------
+2026-05-07 21:33:01 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:33:01 INFO:    [CPU] Measured Time (20000) : 40.911 ms
+2026-05-07 21:33:01 INFO:    [GPU] Measured Time (2000000) : 264.742 ms
+2026-05-07 21:33:01 INFO:    [Proj ] Projected CPU Time for 2000000 : ~4091.1 ms
+2026-05-07 21:33:01 INFO:    [WIN  ] GPU is 15.4532 TIMES FASTER than CPU!
+2026-05-07 21:33:01 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:35:56 -----
+2026-05-07 21:35:56 INFO: 
+======================================================
+2026-05-07 21:35:56 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:35:56 INFO: ======================================================
+2026-05-07 21:35:56 INFO: [+] Configuration Settings
+2026-05-07 21:35:56 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:35:56 INFO:     - Confidence Level : 95%
+2026-05-07 21:35:56 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:35:56 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:35:56 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:35:56 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:35:56 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:35:56 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:35:56 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:35:56 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:35:56 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:35:56 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:35:56 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:35:56 INFO: [+] Hardware Execution Phase
+2026-05-07 21:35:56 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:35:57 INFO: 
+======================================================
+2026-05-07 21:35:57 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:35:57 INFO: ======================================================
+2026-05-07 21:35:57 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:35:57 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:35:57 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:35:57 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:35:57 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:35:57 INFO:    - Confidence Level : 95%
+2026-05-07 21:35:57 INFO: ------------------------------------------------------
+2026-05-07 21:35:57 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:35:57 INFO:    [CPU] VaR: 0.0550174  |  CVaR: 0.0692788
+2026-05-07 21:35:57 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:35:57 INFO:    [Diff ] VaR: 1.38777%  |  CVaR: 0.231595%
+2026-05-07 21:35:57 INFO: ------------------------------------------------------
+2026-05-07 21:35:57 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:35:57 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:35:57 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:35:57 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:35:57 INFO: ------------------------------------------------------
+2026-05-07 21:35:57 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:35:57 INFO:    [CPU] Measured Time (20000) : 4.1008 ms
+2026-05-07 21:35:57 INFO:    [GPU] Measured Time (2000000) : 6.80314 ms
+2026-05-07 21:35:57 INFO:    [Proj ] Projected CPU Time for 2000000 : ~410.08 ms
+2026-05-07 21:35:57 INFO:    [WIN  ] GPU is 60.2781 TIMES FASTER than CPU!
+2026-05-07 21:35:57 INFO: ======================================================
+
+----- End run -----
+
+----- Run at 2026-05-07 21:37:19 -----
+2026-05-07 21:37:19 INFO: 
+======================================================
+2026-05-07 21:37:19 INFO:          INITIALIZING N-DIMENSIONAL VaR ENGINE        
+2026-05-07 21:37:19 INFO: ======================================================
+2026-05-07 21:37:19 INFO: [+] Configuration Settings
+2026-05-07 21:37:19 INFO:     - GPU Target Paths : 2000000
+2026-05-07 21:37:19 INFO:     - Confidence Level : 95%
+2026-05-07 21:37:19 INFO:     - Random Seed      : 0 (Time-Based/Random)
+2026-05-07 21:37:19 INFO:     - Asset Portfolio  : 4 total assets
+2026-05-07 21:37:19 INFO: [+] Data Processing (Historical CSVs)
+2026-05-07 21:37:19 INFO:     - Loaded aselsan.csv -> 503 rows
+2026-05-07 21:37:19 INFO:     - Loaded thy.csv -> 503 rows
+2026-05-07 21:37:19 INFO:     - Loaded tuprs.csv -> 503 rows
+2026-05-07 21:37:19 INFO:     - Loaded pgsus.csv -> 503 rows
+2026-05-07 21:37:19 INFO:     - Aligned Dates    : 503 common valid trading days matched
+
+2026-05-07 21:37:19 INFO: [+] Statistical Models (Matrix Generation)
+2026-05-07 21:37:19 INFO:     - Covariance Matrix Generated (4x4 dimensions)
+2026-05-07 21:37:19 INFO:     - Cholesky (L) Matrix Generated (4x4 dimensions)
+
+2026-05-07 21:37:19 INFO: [+] Hardware Execution Phase
+2026-05-07 21:37:19 INFO:     -> Launching CPU reference calculations (N=20000) ...
+2026-05-07 21:37:20 INFO: 
+======================================================
+2026-05-07 21:37:20 INFO:        MONTE CARLO SIMULATION PERFORMANCE REPORT      
+2026-05-07 21:37:20 INFO: ======================================================
+2026-05-07 21:37:20 INFO: 1. SIMULATION PARAMETERS
+2026-05-07 21:37:20 INFO:    - Portfolio Assets : 4 (Equally Weighted)
+2026-05-07 21:37:20 INFO:    - Historical Days  : 503 active trading days
+2026-05-07 21:37:20 INFO:    - CPU Workload     : 20000 paths
+2026-05-07 21:37:20 INFO:    - GPU Workload     : 2000000 paths (100x heavier)
+2026-05-07 21:37:20 INFO:    - Confidence Level : 95%
+2026-05-07 21:37:20 INFO: ------------------------------------------------------
+2026-05-07 21:37:20 INFO: 2. RISK METRICS (DEFENSE: What could I lose?)
+2026-05-07 21:37:20 INFO:    [CPU] VaR: 0.0544609  |  CVaR: 0.0694476
+2026-05-07 21:37:20 INFO:    [GPU] VaR: 0.0542643  |  CVaR: 0.0691187
+2026-05-07 21:37:20 INFO:    [Diff ] VaR: 0.362215%  |  CVaR: 0.475932%
+2026-05-07 21:37:20 INFO: ------------------------------------------------------
+2026-05-07 21:37:20 INFO: 3. PROFIT & GROWTH PROJECTIONS (OFFENSE: What could I win?)
+2026-05-07 21:37:20 INFO:    [MEAN ] Expected Average Return : 0.413822 %
+2026-05-07 21:37:20 INFO:    [WIN %] Probability of Profit   : 54.6279 %
+2026-05-07 21:37:20 INFO:    [PEAK ] Optimistic Peak Gain    : 6.25728 % (Best 5% of scenarios)
+2026-05-07 21:37:20 INFO: ------------------------------------------------------
+2026-05-07 21:37:20 INFO: 4. PERFORMANCE & ACCELERATION
+2026-05-07 21:37:20 INFO:    [CPU] Measured Time (20000) : 4.0467 ms
+2026-05-07 21:37:20 INFO:    [GPU] Measured Time (2000000) : 6.56563 ms
+2026-05-07 21:37:20 INFO:    [Proj ] Projected CPU Time for 2000000 : ~404.67 ms
+2026-05-07 21:37:20 INFO:    [WIN  ] GPU is 61.6346 TIMES FASTER than CPU!
+2026-05-07 21:37:20 INFO: ======================================================
+
+----- End run -----
+
